@@ -24,3 +24,9 @@ tracing.workspace = true
 
 # Time
 chrono.workspace = true
+
+# Directory resolution
+dirs = "5"
+
+[dev-dependencies]
+tempfile = { workspace = true }

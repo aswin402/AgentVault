@@ -1927,8 +1927,10 @@ version = "0.0.1"
 dependencies = [
  "async-trait",
  "chrono",
+ "dirs",
  "serde",
  "serde_json",
+ "tempfile",
  "thiserror 2.0.18",
  "tokio",
  "toml",
