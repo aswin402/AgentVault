@@ -1,5 +1,7 @@
 use crate::traits::AgentConnector;
-use crate::types::{AgentConfig, AgentMcpConfig, SyncDiff, SyncEntry, SyncResult, SyncUpdate, FieldChange};
+use crate::types::{
+    AgentConfig, AgentMcpConfig, FieldChange, SyncDiff, SyncEntry, SyncResult, SyncUpdate,
+};
 use async_trait::async_trait;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -12,6 +14,12 @@ pub struct GeminiConnector {
     backup_dir: PathBuf,
 }
 
+impl Default for GeminiConnector {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GeminiConnector {
     pub fn new() -> Self {
         let home = dirs::home_dir().expect("Could not determine home directory");
@@ -22,7 +30,10 @@ impl GeminiConnector {
     }
 
     pub fn new_with_paths(config_path: PathBuf, backup_dir: PathBuf) -> Self {
-        Self { config_path, backup_dir }
+        Self {
+            config_path,
+            backup_dir,
+        }
     }
 
     fn mcp_to_agent_config(entry: &McpEntry) -> AgentMcpConfig {
@@ -56,8 +67,8 @@ impl AgentConnector for GeminiConnector {
             .await
             .map_err(VaultError::Io)?;
 
-        let raw: serde_json::Value = serde_json::from_str(&content)
-            .map_err(|e| VaultError::Config {
+        let raw: serde_json::Value =
+            serde_json::from_str(&content).map_err(|e| VaultError::Config {
                 message: format!("Invalid JSON: {}", e),
             })?;
 
@@ -89,7 +100,9 @@ impl AgentConnector for GeminiConnector {
             .map_err(|e| VaultError::Serialization(e.to_string()))?;
 
         if let Some(parent) = self.config_path.parent() {
-            tokio::fs::create_dir_all(parent).await.map_err(VaultError::Io)?;
+            tokio::fs::create_dir_all(parent)
+                .await
+                .map_err(VaultError::Io)?;
         }
 
         tokio::fs::write(&temp_path, &content)
@@ -150,7 +163,7 @@ impl AgentConnector for GeminiConnector {
         }
 
         let vault_names: HashSet<&str> = entries.iter().map(|e| e.name.as_str()).collect();
-        for (name, _) in &config.mcp_servers {
+        for name in config.mcp_servers.keys() {
             if !vault_names.contains(name.as_str()) {
                 diff.removals.push(SyncEntry {
                     name: name.clone(),
