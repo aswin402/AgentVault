@@ -45,18 +45,67 @@ impl McpManager for DefaultMcpManager {
     #[allow(clippy::too_many_arguments)]
     async fn install(
         &self,
-        _name: &str,
-        _source: McpSource,
+        name: &str,
+        source: McpSource,
         _version_req: &str,
-        _args: Vec<String>,
-        _env_vars: std::collections::HashMap<String, String>,
-        _agents: Vec<String>,
-        _tags: Vec<String>,
-        _description: Option<String>,
+        args: Vec<String>,
+        env_vars: std::collections::HashMap<String, String>,
+        agents: Vec<String>,
+        tags: Vec<String>,
+        description: Option<String>,
     ) -> Result<McpEntry, VaultError> {
+        if let McpSource::Local { ref path } = source {
+            if !path.exists() {
+                return Err(VaultError::NotFound {
+                    kind: "local_path".to_string(),
+                    name: path.display().to_string(),
+                });
+            }
+            let target_link = self.vault_dir.join("mcps").join(name);
+            if let Some(parent) = target_link.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
+            if target_link.symlink_metadata().is_ok() {
+                let meta = target_link.symlink_metadata()?;
+                if meta.is_dir() && !meta.file_type().is_symlink() {
+                    std::fs::remove_dir_all(&target_link)?;
+                } else {
+                    std::fs::remove_file(&target_link)?;
+                }
+            }
+
+            #[cfg(unix)]
+            std::os::unix::fs::symlink(path, &target_link)?;
+            #[cfg(windows)]
+            std::os::windows::fs::symlink_dir(path, &target_link)?;
+
+            let entry = McpEntry {
+                id: uuid::Uuid::new_v4().to_string(),
+                name: name.to_string(),
+                display_name: Some(name.to_string()),
+                version: "1.0.0".to_string(), // Local defaults to 1.0.0 or parses package file if available
+                source: source.clone(),
+                install_path: target_link,
+                command: "node".to_string(), // Local entry could define custom script runner, placeholder for now
+                args: args.clone(),
+                env_vars: env_vars.clone(),
+                transport: crate::mcp::models::McpTransport::Stdio,
+                status: crate::mcp::models::McpStatus::Active,
+                installed_at: chrono::Utc::now(),
+                updated_at: chrono::Utc::now(),
+                checksum: None,
+                agents: agents.clone(),
+                tags: tags.clone(),
+                description: description.clone(),
+            };
+
+            self.registry.insert_mcp(&entry)?;
+            return Ok(entry);
+        }
+
         Err(VaultError::NotFound {
             kind: "mcp".to_string(),
-            name: _name.to_string(),
+            name: name.to_string(),
         })
     }
 
