@@ -112,4 +112,61 @@ mod tests {
         assert_eq!(fetched.name, "is-number-mcp");
         assert_eq!(fetched.tags, vec!["npm-tag".to_string()]);
     }
+
+    #[tokio::test]
+    async fn test_mcp_manager_install_pypi() {
+        let has_uv = std::process::Command::new("uv")
+            .arg("--version")
+            .output()
+            .is_ok();
+        let has_python3 = std::process::Command::new("python3")
+            .arg("--version")
+            .output()
+            .is_ok();
+        let has_python = std::process::Command::new("python")
+            .arg("--version")
+            .output()
+            .is_ok();
+
+        if !has_uv && !has_python3 && !has_python {
+            println!("Neither uv nor python is installed, skipping test");
+            return;
+        }
+
+        let temp_db_dir = tempdir().unwrap();
+        let db_path = temp_db_dir.path().join("vault.db");
+        let registry = Arc::new(SqliteRegistry::new(&db_path).unwrap());
+        let temp_vault_dir = tempdir().unwrap();
+        let manager = DefaultMcpManager::new(registry.clone(), temp_vault_dir.path().to_path_buf());
+
+        // Use a known small package for testing
+        let source = McpSource::PyPi {
+            package: "six".to_string(),
+        };
+        let entry = manager
+            .install(
+                "six-mcp",
+                source,
+                "latest",
+                vec![],
+                std::collections::HashMap::new(),
+                vec![],
+                vec!["pypi-tag".to_string()],
+                None,
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(entry.name, "six-mcp");
+        assert!(temp_vault_dir
+            .path()
+            .join("mcps")
+            .join("six-mcp")
+            .join("venv")
+            .exists());
+
+        let fetched = manager.get("six-mcp").unwrap();
+        assert_eq!(fetched.name, "six-mcp");
+        assert_eq!(fetched.tags, vec!["pypi-tag".to_string()]);
+    }
 }

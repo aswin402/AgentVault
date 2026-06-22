@@ -210,6 +210,195 @@ impl McpManager for DefaultMcpManager {
             return Ok(entry);
         }
 
+        if let McpSource::PyPi { ref package } = source {
+            // Check if uv or python is present
+            let has_uv = match tokio::process::Command::new("uv")
+                .arg("--version")
+                .output()
+                .await
+            {
+                Ok(output) => output.status.success(),
+                _ => false,
+            };
+
+            let python_cmd = if match tokio::process::Command::new("python3")
+                .arg("--version")
+                .output()
+                .await
+            {
+                Ok(output) => output.status.success(),
+                _ => false,
+            } {
+                Some("python3".to_string())
+            } else if match tokio::process::Command::new("python")
+                .arg("--version")
+                .output()
+                .await
+            {
+                Ok(output) => output.status.success(),
+                _ => false,
+            } {
+                Some("python".to_string())
+            } else {
+                None
+            };
+
+            if !has_uv && python_cmd.is_none() {
+                return Err(VaultError::McpInstall {
+                    source_type: "pypi".to_string(),
+                    message: "Neither 'uv' nor 'python3'/'python' executable found in PATH".to_string(),
+                });
+            }
+
+            let target_dir = self.vault_dir.join("mcps").join(name);
+            if let Some(parent) = target_dir.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
+            clean_target_dir(&target_dir)?;
+            std::fs::create_dir_all(&target_dir)?;
+
+            let venv_dir = target_dir.join("venv");
+            let package_spec = if version_req == "latest" || version_req.is_empty() {
+                package.to_string()
+            } else {
+                format!("{}=={}", package, version_req)
+            };
+
+            let run_install = async {
+                if has_uv {
+                    run_cmd("uv", &["venv", &venv_dir.to_string_lossy()], "pypi").await?;
+                    let venv_python = if cfg!(windows) {
+                        venv_dir.join("Scripts").join("python.exe")
+                    } else {
+                        venv_dir.join("bin").join("python")
+                    };
+                    run_cmd(
+                        "uv",
+                        &[
+                            "pip",
+                            "install",
+                            "--python",
+                            &venv_python.to_string_lossy(),
+                            &package_spec,
+                        ],
+                        "pypi",
+                    )
+                    .await?;
+                } else if let Some(ref py_cmd) = python_cmd {
+                    run_cmd(
+                        py_cmd,
+                        &["-m", "venv", &venv_dir.to_string_lossy()],
+                        "pypi",
+                    )
+                    .await?;
+                    let pip_path = if cfg!(windows) {
+                        venv_dir.join("Scripts").join("pip.exe")
+                    } else {
+                        venv_dir.join("bin").join("pip")
+                    };
+                    run_cmd(
+                        &pip_path.to_string_lossy(),
+                        &["install", &package_spec],
+                        "pypi",
+                    )
+                    .await?;
+                }
+                Ok::<(), VaultError>(())
+            };
+
+            if let Err(e) = run_install.await {
+                let _ = std::fs::remove_dir_all(&target_dir);
+                return Err(e);
+            }
+
+            // Resolve python version from the installed package in venv
+            let venv_python = if cfg!(windows) {
+                venv_dir.join("Scripts").join("python.exe")
+            } else {
+                venv_dir.join("bin").join("python")
+            };
+
+            let version = match tokio::process::Command::new(&venv_python)
+                .arg("-c")
+                .arg(format!(
+                    "import importlib.metadata; print(importlib.metadata.version('{}'))",
+                    package
+                ))
+                .output()
+                .await
+            {
+                Ok(output) if output.status.success() => {
+                    let ver = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                    if ver.is_empty() {
+                        if version_req == "latest" || version_req.is_empty() {
+                            "1.0.0".to_string()
+                        } else {
+                            version_req.to_string()
+                        }
+                    } else {
+                        ver
+                    }
+                }
+                _ => {
+                    match tokio::process::Command::new(&venv_python)
+                        .arg("-c")
+                        .arg(format!(
+                            "import pkg_resources; print(pkg_resources.get_distribution('{}').version)",
+                            package
+                        ))
+                        .output()
+                        .await
+                    {
+                        Ok(output) if output.status.success() => {
+                            let ver = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                            if ver.is_empty() {
+                                if version_req == "latest" || version_req.is_empty() {
+                                    "1.0.0".to_string()
+                                } else {
+                                    version_req.to_string()
+                                }
+                            } else {
+                                ver
+                            }
+                        }
+                        _ => {
+                            if version_req == "latest" || version_req.is_empty() {
+                                "1.0.0".to_string()
+                            } else {
+                                version_req.to_string()
+                            }
+                        }
+                    }
+                }
+            };
+
+            let (cmd_name, mut resolved_args) = resolve_pypi_cmd(&venv_dir, package);
+            resolved_args.extend(args.clone());
+
+            let entry = McpEntry {
+                id: uuid::Uuid::new_v4().to_string(),
+                name: name.to_string(),
+                display_name: Some(name.to_string()),
+                version,
+                source: source.clone(),
+                install_path: target_dir,
+                command: cmd_name,
+                args: resolved_args,
+                env_vars: env_vars.clone(),
+                transport: crate::mcp::models::McpTransport::Stdio,
+                status: crate::mcp::models::McpStatus::Active,
+                installed_at: chrono::Utc::now(),
+                updated_at: chrono::Utc::now(),
+                checksum: None,
+                agents: agents.clone(),
+                tags: tags.clone(),
+                description: description.clone(),
+            };
+
+            self.registry.insert_mcp(&entry)?;
+            return Ok(entry);
+        }
+
         Err(VaultError::NotFound {
             kind: "mcp".to_string(),
             name: name.to_string(),
@@ -320,4 +509,75 @@ fn resolve_npm_bin(
     let script_path_str = script_path.to_string_lossy().to_string();
 
     Ok(("node".to_string(), vec![script_path_str]))
+}
+
+async fn run_cmd<I, S>(
+    cmd: &str,
+    args: I,
+    source_type: &str,
+) -> Result<(), VaultError>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<std::ffi::OsStr>,
+{
+    match tokio::process::Command::new(cmd)
+        .args(args)
+        .output()
+        .await
+    {
+        Ok(out) if out.status.success() => Ok(()),
+        Ok(out) => {
+            let stderr = String::from_utf8_lossy(&out.stderr).into_owned();
+            let stdout = String::from_utf8_lossy(&out.stdout).into_owned();
+            Err(VaultError::McpInstall {
+                source_type: source_type.to_string(),
+                message: format!(
+                    "Command '{}' failed with status {}. stdout: {}, stderr: {}",
+                    cmd, out.status, stdout, stderr
+                ),
+            })
+        }
+        Err(e) => Err(VaultError::McpInstall {
+            source_type: source_type.to_string(),
+            message: format!("Failed to execute command '{}': {}", cmd, e),
+        }),
+    }
+}
+
+fn resolve_pypi_cmd(venv_dir: &std::path::Path, package_name: &str) -> (String, Vec<String>) {
+    let clean_name = package_name.replace('_', "-");
+    let bin_dir = if cfg!(windows) {
+        venv_dir.join("Scripts")
+    } else {
+        venv_dir.join("bin")
+    };
+
+    let possible_names = if cfg!(windows) {
+        vec![
+            clean_name.clone(),
+            format!("{}.exe", clean_name),
+            format!("{}.cmd", clean_name),
+            format!("{}.bat", clean_name),
+        ]
+    } else {
+        vec![clean_name.clone()]
+    };
+
+    for name in possible_names {
+        let path = bin_dir.join(&name);
+        if path.exists() && path.is_file() {
+            return (path.to_string_lossy().to_string(), vec![]);
+        }
+    }
+
+    let python_path = if cfg!(windows) {
+        bin_dir.join("python.exe")
+    } else {
+        bin_dir.join("python")
+    };
+
+    (
+        python_path.to_string_lossy().to_string(),
+        vec!["-m".to_string(), package_name.to_string()],
+    )
 }
