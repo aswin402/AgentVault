@@ -1,7 +1,7 @@
 use crate::cli::SyncArgs;
 use anyhow::Result;
 
-pub async fn handle(args: SyncArgs) -> Result<()> {
+pub async fn handle(args: SyncArgs, _vault_dir_override: Option<&str>) -> Result<()> {
     println!("Command 'sync' is not yet implemented (args: {:?})", args);
     Ok(())
 }

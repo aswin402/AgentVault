@@ -19,7 +19,7 @@ use clap::{Parser, Subcommand, ValueEnum};
         vault sync claude                       # Sync to Claude Code\n  \
         vault sync --all                        # Sync to all agents\n  \
         vault list --table                      # List all capabilities\n  \
-        vault doctor                            # Check vault health",
+        vault doctor                            # Check vault health"
 )]
 pub struct Cli {
     #[command(subcommand)]
@@ -92,11 +92,9 @@ pub enum Commands {
 ///
 /// Safe to run multiple times — will not overwrite existing data.
 #[derive(Parser, Debug)]
-#[command(
-    after_help = "Examples:\n  \
+#[command(after_help = "Examples:\n  \
         vault init                    # Initialize with defaults\n  \
-        vault init --dir ~/my-vault   # Custom vault directory"
-)]
+        vault init --dir ~/my-vault   # Custom vault directory")]
 pub struct InitArgs {
     /// Override the vault directory location.
     #[arg(short, long)]
@@ -119,15 +117,13 @@ pub struct InitArgs {
 ///   docker:<image>         Pull Docker image
 ///   <bare-name>            Auto-detect from registry
 #[derive(Parser, Debug)]
-#[command(
-    after_help = "Examples:\n  \
+#[command(after_help = "Examples:\n  \
         vault install npm:@anthropic/mcp-filesystem\n  \
         vault install pypi:mcp-server-memory\n  \
         vault install github:anthropics/mcp-servers\n  \
         vault install local:/home/user/my-mcp\n  \
         vault install npm:@anthropic/mcp-github --env GITHUB_TOKEN=env:GITHUB_TOKEN\n  \
-        vault install npm:@anthropic/mcp-filesystem --name fs --args '/home/user/projects'"
-)]
+        vault install npm:@anthropic/mcp-filesystem --name fs --args '/home/user/projects'")]
 pub struct InstallArgs {
     /// Source specifier. Format: [type:]<identifier>
     /// Examples: npm:@anthropic/mcp-filesystem, pypi:mcp-server-memory
@@ -200,12 +196,10 @@ pub enum TransportType {
 /// Deletes the capability's files from disk and removes its registry entry.
 /// Does NOT automatically update agent configs — run `vault sync` after removal.
 #[derive(Parser, Debug)]
-#[command(
-    after_help = "Examples:\n  \
+#[command(after_help = "Examples:\n  \
         vault remove filesystem\n  \
         vault remove github --force\n  \
-        vault remove my-mcp --keep-files"
-)]
+        vault remove my-mcp --keep-files")]
 pub struct RemoveArgs {
     /// Name of the capability to remove.
     pub name: String,
@@ -226,12 +220,10 @@ pub struct RemoveArgs {
 /// Respects version constraints set during install.
 /// Use --force to bypass version constraints.
 #[derive(Parser, Debug)]
-#[command(
-    after_help = "Examples:\n  \
+#[command(after_help = "Examples:\n  \
         vault update filesystem           # Update single MCP\n  \
         vault update --all                # Update all capabilities\n  \
-        vault update --all --dry-run      # Preview what would change"
-)]
+        vault update --all --dry-run      # Preview what would change")]
 pub struct UpdateArgs {
     /// Name of the capability to update. Omit for --all.
     pub name: Option<String>,
@@ -256,13 +248,11 @@ pub struct UpdateArgs {
 /// By default, lists all capability types in a formatted table.
 /// Use filters to show only specific types.
 #[derive(Parser, Debug)]
-#[command(
-    after_help = "Examples:\n  \
+#[command(after_help = "Examples:\n  \
         vault list                    # List all\n  \
         vault list --mcps             # MCPs only\n  \
         vault list --skills --json    # Skills as JSON\n  \
-        vault list --table            # Force table output"
-)]
+        vault list --table            # Force table output")]
 pub struct ListArgs {
     /// Show only MCP servers.
     #[arg(short, long)]
@@ -297,12 +287,10 @@ pub struct ListArgs {
 
 /// Search for capabilities in the local registry or remote sources.
 #[derive(Parser, Debug)]
-#[command(
-    after_help = "Examples:\n  \
+#[command(after_help = "Examples:\n  \
         vault search filesystem\n  \
         vault search github --source npm\n  \
-        vault search memory --limit 5"
-)]
+        vault search memory --limit 5")]
 pub struct SearchArgs {
     /// Search query string.
     pub query: String,
@@ -339,13 +327,11 @@ pub enum SearchSource {
 /// Reads the vault registry and writes MCP entries into the target
 /// agent's configuration file. Creates a backup before writing.
 #[derive(Parser, Debug)]
-#[command(
-    after_help = "Examples:\n  \
+#[command(after_help = "Examples:\n  \
         vault sync claude             # Sync to Claude Code\n  \
         vault sync --all              # Sync to all agents\n  \
         vault sync claude --dry-run   # Preview changes\n  \
-        vault sync --all --force      # Overwrite all (no merge)"
-)]
+        vault sync --all --force      # Overwrite all (no merge)")]
 pub struct SyncArgs {
     /// Agent to sync to. Omit with --all to sync all.
     pub agent: Option<String>,
@@ -390,14 +376,12 @@ pub struct StatusArgs {
 /// With a key, prints that key's value.
 /// With a key and value, sets the key.
 #[derive(Parser, Debug)]
-#[command(
-    after_help = "Examples:\n  \
+#[command(after_help = "Examples:\n  \
         vault config                          # Print all config\n  \
         vault config default_agent            # Get a value\n  \
         vault config default_agent claude     # Set a value\n  \
         vault config --list                   # Print as key=value pairs\n  \
-        vault config --reset                  # Reset to defaults"
-)]
+        vault config --reset                  # Reset to defaults")]
 pub struct ConfigArgs {
     /// Configuration key to get or set.
     pub key: Option<String>,
@@ -421,11 +405,9 @@ pub struct ConfigArgs {
 /// Checks vault directory, database integrity, tool availability,
 /// orphaned files, and agent connector status.
 #[derive(Parser, Debug)]
-#[command(
-    after_help = "Examples:\n  \
+#[command(after_help = "Examples:\n  \
         vault doctor         # Run all checks\n  \
-        vault doctor --fix   # Attempt to auto-fix issues"
-)]
+        vault doctor --fix   # Attempt to auto-fix issues")]
 pub struct DoctorArgs {
     /// Attempt to automatically fix detected issues.
     #[arg(short, long)]
@@ -458,12 +440,10 @@ pub enum ConnectorCommands {
 }
 
 #[derive(Parser, Debug)]
-#[command(
-    after_help = "Examples:\n  \
+#[command(after_help = "Examples:\n  \
         vault connector add claude\n  \
         vault connector add gemini --config-path ~/.gemini/settings.json\n  \
-        vault connector add custom --config-path /path/to/config.json"
-)]
+        vault connector add custom --config-path /path/to/config.json")]
 pub struct ConnectorAddArgs {
     /// Agent type to register.
     /// Built-in: claude, gemini, opencode, codex, cursor
@@ -503,12 +483,10 @@ pub struct ConnectorRemoveArgs {
 /// Generates a vault.toml (or JSON) file that can be imported
 /// on another machine to reproduce the same capability set.
 #[derive(Parser, Debug)]
-#[command(
-    after_help = "Examples:\n  \
+#[command(after_help = "Examples:\n  \
         vault export                       # Export to ./vault.toml\n  \
         vault export --output my-vault.toml\n  \
-        vault export --format json --output vault.json"
-)]
+        vault export --format json --output vault.json")]
 pub struct ExportArgs {
     /// Output format.
     #[arg(short, long, value_enum, default_value = "toml")]
@@ -533,13 +511,11 @@ pub enum ExportFormat {
 /// that are not already present in the vault. Optionally prunes
 /// capabilities not in the manifest.
 #[derive(Parser, Debug)]
-#[command(
-    after_help = "Examples:\n  \
+#[command(after_help = "Examples:\n  \
         vault import vault.toml\n  \
         vault import vault.toml --dry-run\n  \
         vault import vault.toml --replace\n  \
-        vault import vault.json --merge"
-)]
+        vault import vault.json --merge")]
 pub struct ImportArgs {
     /// Path to the manifest file to import.
     pub file: String,

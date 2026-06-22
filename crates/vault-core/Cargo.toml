@@ -41,3 +41,6 @@ tracing-subscriber.workspace = true
 
 # Platform-specific directories
 dirs = "5"
+
+# Temp files
+tempfile.workspace = true

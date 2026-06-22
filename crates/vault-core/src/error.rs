@@ -16,7 +16,10 @@ pub enum VaultError {
     Connector { agent: String, message: String },
 
     #[error("MCP installation failed ({source_type}): {message}")]
-    McpInstall { source_type: String, message: String },
+    McpInstall {
+        source_type: String,
+        message: String,
+    },
 
     #[error("Not found: {kind} '{name}'")]
     NotFound { kind: String, name: String },
@@ -25,7 +28,11 @@ pub enum VaultError {
     AlreadyExists { kind: String, name: String },
 
     #[error("Version conflict for '{name}': wanted {wanted}, found {found}")]
-    VersionConflict { name: String, wanted: String, found: String },
+    VersionConflict {
+        name: String,
+        wanted: String,
+        found: String,
+    },
 
     #[error("Permission denied: {path}")]
     PermissionDenied { path: String },
