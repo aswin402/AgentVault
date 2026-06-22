@@ -63,4 +63,49 @@ mod tests {
         assert_eq!(fetched.name, "my-local-mcp");
         assert_eq!(fetched.tags, vec!["tag1".to_string()]);
     }
+
+    #[tokio::test]
+    async fn test_mcp_manager_install_npm() {
+        let npm_cmd = if cfg!(windows) { "npm.cmd" } else { "npm" };
+        if std::process::Command::new(npm_cmd)
+            .arg("--version")
+            .output()
+            .is_err()
+        {
+            println!("npm is not installed, skipping test");
+            return;
+        }
+
+        let temp_db_dir = tempdir().unwrap();
+        let db_path = temp_db_dir.path().join("vault.db");
+        let registry = Arc::new(SqliteRegistry::new(&db_path).unwrap());
+        let temp_vault_dir = tempdir().unwrap();
+        let manager = DefaultMcpManager::new(registry.clone(), temp_vault_dir.path().to_path_buf());
+
+        // Use a known small package for testing
+        let source = McpSource::Npm {
+            package: "express".to_string(),
+        };
+        let entry = manager
+            .install(
+                "express-mcp",
+                source,
+                "latest",
+                vec![],
+                std::collections::HashMap::new(),
+                vec![],
+                vec![],
+                None,
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(entry.name, "express-mcp");
+        assert!(temp_vault_dir
+            .path()
+            .join("mcps")
+            .join("express-mcp")
+            .join("package.json")
+            .exists());
+    }
 }
