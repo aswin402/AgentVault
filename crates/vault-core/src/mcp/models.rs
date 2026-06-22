@@ -91,18 +91,15 @@ pub enum McpTransport {
 }
 
 /// Operational status of an MCP server.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 #[serde(tag = "state", rename_all = "snake_case")]
 pub enum McpStatus {
+    #[default]
     Active,
     Disabled,
-    Error { message: String },
-}
-
-impl Default for McpStatus {
-    fn default() -> Self {
-        McpStatus::Active
-    }
+    Error {
+        message: String,
+    },
 }
 
 impl std::fmt::Display for McpSource {

@@ -68,8 +68,8 @@ impl SqliteRegistry {
         let conn = Connection::open(db_path)?;
 
         // Set PRAGMAs outside of transactions using dedicated pragma_update
-        conn.pragma_update(None, "journal_mode", &"WAL")?;
-        conn.pragma_update(None, "foreign_keys", &"ON")?;
+        conn.pragma_update(None, "journal_mode", "WAL")?;
+        conn.pragma_update(None, "foreign_keys", "ON")?;
 
         // Execute migrations
         run_migrations(&conn)?;
@@ -944,5 +944,58 @@ impl Registry for SqliteRegistry {
         }
 
         Ok(results)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_sqlite_registry_mcp_ops() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let db_path = temp_dir.path().join("vault.db");
+        let registry = SqliteRegistry::new(&db_path).unwrap();
+
+        let mcp = McpEntry {
+            id: "01J5XQ9Z".to_string(),
+            name: "filesystem".to_string(),
+            display_name: Some("Filesystem Access".to_string()),
+            version: "1.0.0".to_string(),
+            source: McpSource::Npm {
+                package: "@anthropic/mcp-filesystem".to_string(),
+            },
+            install_path: PathBuf::from("/tmp/mcp-filesystem"),
+            command: "npx".to_string(),
+            args: vec!["@anthropic/mcp-filesystem".to_string()],
+            env_vars: HashMap::new(),
+            transport: McpTransport::Stdio,
+            status: McpStatus::Active,
+            installed_at: Utc::now(),
+            updated_at: Utc::now(),
+            checksum: None,
+            agents: vec![],
+            tags: vec!["filesystem".to_string()],
+            description: None,
+        };
+
+        registry.insert_mcp(&mcp).unwrap();
+
+        let fetched = registry.get_mcp("filesystem").unwrap();
+        assert_eq!(fetched.name, "filesystem");
+        assert_eq!(fetched.version, "1.0.0");
+
+        let list = registry.list_mcps().unwrap();
+        assert_eq!(list.len(), 1);
+
+        let mut updated = mcp.clone();
+        updated.version = "1.0.1".to_string();
+        registry.update_mcp(&updated).unwrap();
+
+        let fetched_updated = registry.get_mcp("filesystem").unwrap();
+        assert_eq!(fetched_updated.version, "1.0.1");
+
+        registry.delete_mcp("filesystem").unwrap();
+        assert!(registry.get_mcp("filesystem").is_err());
     }
 }

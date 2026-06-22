@@ -121,8 +121,7 @@ impl VaultConfig {
 
         // Atomic write via tempfile
         let temp_dir = path.parent().unwrap_or_else(|| Path::new("."));
-        let mut temp_file =
-            tempfile::NamedTempFile::new_in(temp_dir).map_err(|e| VaultError::Io(e))?;
+        let mut temp_file = tempfile::NamedTempFile::new_in(temp_dir).map_err(VaultError::Io)?;
         use std::io::Write;
         temp_file.write_all(content.as_bytes())?;
         temp_file
@@ -141,5 +140,34 @@ impl VaultConfig {
         self.secret_patterns
             .iter()
             .any(|pattern| lower_name.contains(&pattern.to_lowercase()))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_config() {
+        let config = VaultConfig::default();
+        assert_eq!(config.max_backups, 10);
+        assert_eq!(config.log_level, "info");
+        assert!(config.backup_before_sync);
+        assert!(config.is_secret("GITHUB_TOKEN"));
+        assert!(!config.is_secret("LOG_LEVEL"));
+    }
+
+    #[test]
+    fn test_save_and_load_config() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let config_path = temp_dir.path().join("config.toml");
+        let config = VaultConfig {
+            max_backups: 42,
+            ..Default::default()
+        };
+        config.save(&config_path).unwrap();
+
+        let loaded = VaultConfig::load(&config_path).unwrap();
+        assert_eq!(loaded.max_backups, 42);
     }
 }

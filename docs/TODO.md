@@ -18,102 +18,102 @@
 
 ## Phase 0: Project Bootstrap
 
-- [ ] Initialize Cargo workspace (`Cargo.toml` with `[workspace]` and `members = ["vault-cli", "vault-core", "vault-connectors"]`)
-- [ ] Create `vault-cli` crate with `Cargo.toml` and CLI dependencies (`clap`, `colored`, `indicatif`, `dialoguer`, `tabled`, `anyhow`, `tracing-subscriber`)
-- [ ] Create `vault-core` crate with `Cargo.toml` and core dependencies (`serde`, `toml`, `serde_json`, `rusqlite`, `semver`, `chrono`, `dirs`, `sha2`, `thiserror`, `tracing`, `reqwest`, `tokio`)
-- [ ] Create `vault-connectors` crate with `Cargo.toml` (depends on `vault-core`)
-- [ ] Create `.gitignore` for Rust (target/, *.swp, .env, *.db)
-- [ ] Define `VaultError` enum in `vault-core/src/error.rs` with variants:
-  - [ ] `Io` — filesystem and general I/O errors
-  - [ ] `Database` — SQLite operation failures
-  - [ ] `Config` — configuration parsing/validation errors
-  - [ ] `Network` — HTTP/download failures
-  - [ ] `Connector` — agent connector read/write failures
-  - [ ] `McpInstall` — MCP installation failures (npm, pip, git)
-  - [ ] `NotFound` — requested capability not found in registry
-  - [ ] `AlreadyExists` — duplicate install attempt
-  - [ ] `VersionConflict` — semver constraint violation
-  - [ ] `PermissionDenied` — filesystem permission errors
-  - [ ] `Serialization` — serde serialization/deserialization errors
-- [ ] Set up `tracing-subscriber` in `vault-cli/src/main.rs` with env filter (`VAULT_LOG`)
-- [ ] Define ALL CLI subcommands with `clap` derive API — each printing `"not yet implemented"`:
-  - [ ] `vault install <source>` — install a capability (MCP, skill, workflow)
-  - [ ] `vault remove <name>` — remove an installed capability
-  - [ ] `vault update [name]` — update one or all capabilities
-  - [ ] `vault list` — list installed capabilities
-  - [ ] `vault search <query>` — search for capabilities
-  - [ ] `vault sync <agent>` — sync capabilities to an agent config
-  - [ ] `vault status` — show vault health and summary
-  - [ ] `vault config` — view/set configuration values
-  - [ ] `vault init` — initialize a new vault
-  - [ ] `vault doctor` — diagnose environment issues
-  - [ ] `vault connector add <agent>` — register an agent connector
-  - [ ] `vault connector list` — list registered connectors
-  - [ ] `vault connector remove <agent>` — unregister an agent connector
-  - [ ] `vault export` — export current state to `vault.toml`
-  - [ ] `vault import <path>` — import capabilities from a `vault.toml`
-- [ ] Verify `cargo build --workspace` succeeds with zero errors
-- [ ] Verify `cargo clippy --workspace` passes with no warnings
-- [ ] Verify `cargo fmt --all -- --check` passes
-- [ ] Set up GitHub Actions CI workflow (`.github/workflows/ci.yml`):
-  - [ ] Matrix: stable + nightly Rust, Ubuntu + macOS
-  - [ ] Steps: checkout, cache, build, clippy, fmt check, test
+- [x] Initialize Cargo workspace (`Cargo.toml` with `[workspace]` and `members = ["vault-cli", "vault-core", "vault-connectors"]`)
+- [x] Create `vault-cli` crate with `Cargo.toml` and CLI dependencies (`clap`, `colored`, `indicatif`, `dialoguer`, `tabled`, `anyhow`, `tracing-subscriber`)
+- [x] Create `vault-core` crate with `Cargo.toml` and core dependencies (`serde`, `toml`, `serde_json`, `rusqlite`, `semver`, `chrono`, `dirs`, `sha2`, `thiserror`, `tracing`, `reqwest`, `tokio`)
+- [x] Create `vault-connectors` crate with `Cargo.toml` (depends on `vault-core`)
+- [x] Create `.gitignore` for Rust (target/, *.swp, .env, *.db)
+- [x] Define `VaultError` enum in `vault-core/src/error.rs` with variants:
+  - [x] `Io` — filesystem and general I/O errors
+  - [x] `Database` — SQLite operation failures
+  - [x] `Config` — configuration parsing/validation errors
+  - [x] `Network` — HTTP/download failures
+  - [x] `Connector` — agent connector read/write failures
+  - [x] `McpInstall` — MCP installation failures (npm, pip, git)
+  - [x] `NotFound` — requested capability not found in registry
+  - [x] `AlreadyExists` — duplicate install attempt
+  - [x] `VersionConflict` — semver constraint violation
+  - [x] `PermissionDenied` — filesystem permission errors
+  - [x] `Serialization` — serde serialization/deserialization errors
+- [x] Set up `tracing-subscriber` in `vault-cli/src/main.rs` with env filter (`VAULT_LOG`)
+- [x] Define ALL CLI subcommands with `clap` derive API — each printing `"not yet implemented"`:
+  - [x] `vault install <source>` — install a capability (MCP, skill, workflow)
+  - [x] `vault remove <name>` — remove an installed capability
+  - [x] `vault update [name]` — update one or all capabilities
+  - [x] `vault list` — list installed capabilities
+  - [x] `vault search <query>` — search for capabilities
+  - [x] `vault sync <agent>` — sync capabilities to an agent config
+  - [x] `vault status` — show vault health and summary
+  - [x] `vault config` — view/set configuration values
+  - [x] `vault init` — initialize a new vault
+  - [x] `vault doctor` — diagnose environment issues
+  - [x] `vault connector add <agent>` — register an agent connector
+  - [x] `vault connector list` — list registered connectors
+  - [x] `vault connector remove <agent>` — unregister an agent connector
+  - [x] `vault export` — export current state to `vault.toml`
+  - [x] `vault import <path>` — import capabilities from a `vault.toml`
+- [x] Verify `cargo build --workspace` succeeds with zero errors
+- [x] Verify `cargo clippy --workspace` passes with no warnings
+- [x] Verify `cargo fmt --all -- --check` passes
+- [x] Set up GitHub Actions CI workflow (`.github/workflows/ci.yml`):
+  - [x] Matrix: stable + nightly Rust, Ubuntu + macOS
+  - [x] Steps: checkout, cache, build, clippy, fmt check, test
 
 ---
 
 ## Phase 1: Storage Foundation
 
-- [ ] Define `VaultConfig` struct and implement `config.toml` parsing with serde
-  - [ ] Fields: `vault_dir`, `default_agent`, `sync_on_install`, `log_level`
-  - [ ] Default config generation on first run
-  - [ ] Config file location: `~/.agentvault/config.toml`
-- [ ] Design and implement SQLite schema with migrations:
-  - [ ] `mcps` table (id, name, version, source, transport, config_json, installed_at, updated_at, checksum)
-  - [ ] `skills` table (id, name, version, source, path, installed_at, updated_at)
-  - [ ] `workflows` table (id, name, version, source, definition_json, installed_at, updated_at)
-  - [ ] `capabilities` table (id, kind, ref_id, tags, description) — unified capability view
-  - [ ] `agent_configs` table (id, agent_type, config_path, last_synced, enabled)
-  - [ ] `sync_history` table (id, agent_type, action, diff_json, synced_at, success)
-- [ ] Implement `Registry` trait with CRUD operations:
-  - [ ] `insert_mcp()`, `get_mcp()`, `list_mcps()`, `update_mcp()`, `delete_mcp()`
-  - [ ] Equivalent methods for skills and workflows
-  - [ ] `search()` with fuzzy name matching
-- [ ] Implement `SqliteRegistry` struct (concrete implementation of `Registry`)
-  - [ ] Connection management with `rusqlite`
-  - [ ] Schema initialization on first open
-  - [ ] Transaction support for multi-step operations
-- [ ] Implement filesystem store (`~/.agentvault/` directory structure):
-  - [ ] `~/.agentvault/config.toml`
-  - [ ] `~/.agentvault/vault.db`
-  - [ ] `~/.agentvault/mcps/` — installed MCP server files
-  - [ ] `~/.agentvault/skills/` — installed skill directories
-  - [ ] `~/.agentvault/workflows/` — installed workflow definitions
-  - [ ] `~/.agentvault/backups/` — agent config backups
-  - [ ] `~/.agentvault/logs/` — sync and operation logs
-- [ ] Implement `vault init` command:
-  - [ ] Create directory structure
-  - [ ] Initialize SQLite database with schema
-  - [ ] Generate default `config.toml`
-  - [ ] Print success summary with directory layout
-- [ ] Implement `vault status` command:
-  - [ ] Show vault directory location
-  - [ ] Show counts: installed MCPs, skills, workflows
-  - [ ] Show registered agent connectors and last sync time
-  - [ ] Show database size and integrity check result
-- [ ] Implement `vault doctor` command:
-  - [ ] Check vault directory exists and is writable
-  - [ ] Check SQLite database integrity (`PRAGMA integrity_check`)
-  - [ ] Check for orphaned files (on disk but not in DB)
-  - [ ] Check for missing files (in DB but not on disk)
-  - [ ] Detect `npm`/`npx` availability and version
-  - [ ] Detect `uv`/`pip` availability and version
-  - [ ] Detect `git` availability and version
-  - [ ] Report all findings with pass/warn/fail indicators
-- [ ] Unit tests for all storage operations:
-  - [ ] Config parsing: valid, invalid, missing fields, defaults
-  - [ ] SQLite CRUD: insert, get, list, update, delete for each table
-  - [ ] Filesystem store: creation, listing, cleanup
-  - [ ] `vault init` idempotency (running twice doesn't corrupt)
+- [x] Define `VaultConfig` struct and implement `config.toml` parsing with serde
+  - [x] Fields: `vault_dir`, `default_agent`, `sync_on_install`, `log_level`
+  - [x] Default config generation on first run
+  - [x] Config file location: `~/.agentvault/config.toml`
+- [x] Design and implement SQLite schema with migrations:
+  - [x] `mcps` table (id, name, version, source, transport, config_json, installed_at, updated_at, checksum)
+  - [x] `skills` table (id, name, version, source, path, installed_at, updated_at)
+  - [x] `workflows` table (id, name, version, source, definition_json, installed_at, updated_at)
+  - [x] `capabilities` table (id, kind, ref_id, tags, description) — unified capability view
+  - [x] `agent_configs` table (id, agent_type, config_path, last_synced, enabled)
+  - [x] `sync_history` table (id, agent_type, action, diff_json, synced_at, success)
+- [x] Implement `Registry` trait with CRUD operations:
+  - [x] `insert_mcp()`, `get_mcp()`, `list_mcps()`, `update_mcp()`, `delete_mcp()`
+  - [x] Equivalent methods for skills and workflows
+  - [x] `search()` with fuzzy name matching
+- [x] Implement `SqliteRegistry` struct (concrete implementation of `Registry`)
+  - [x] Connection management with `rusqlite`
+  - [x] Schema initialization on first open
+  - [x] Transaction support for multi-step operations
+- [x] Implement filesystem store (`~/.agentvault/` directory structure):
+  - [x] `~/.agentvault/config.toml`
+  - [x] `~/.agentvault/vault.db`
+  - [x] `~/.agentvault/mcps/` — installed MCP server files
+  - [x] `~/.agentvault/skills/` — installed skill directories
+  - [x] `~/.agentvault/workflows/` — installed workflow definitions
+  - [x] `~/.agentvault/backups/` — agent config backups
+  - [x] `~/.agentvault/logs/` — sync and operation logs
+- [x] Implement `vault init` command:
+  - [x] Create directory structure
+  - [x] Initialize SQLite database with schema
+  - [x] Generate default `config.toml`
+  - [x] Print success summary with directory layout
+- [x] Implement `vault status` command:
+  - [x] Show vault directory location
+  - [x] Show counts: installed MCPs, skills, workflows
+  - [x] Show registered agent connectors and last sync time
+  - [x] Show database size and integrity check result
+- [x] Implement `vault doctor` command:
+  - [x] Check vault directory exists and is writable
+  - [x] Check SQLite database integrity (`PRAGMA integrity_check`)
+  - [x] Check for orphaned files (on disk but not in DB)
+  - [x] Check for missing files (in DB but not on disk)
+  - [x] Detect `npm`/`npx` availability and version
+  - [x] Detect `uv`/`pip` availability and version
+  - [x] Detect `git` availability and version
+  - [x] Report all findings with pass/warn/fail indicators
+- [x] Unit tests for all storage operations:
+  - [x] Config parsing: valid, invalid, missing fields, defaults
+  - [x] SQLite CRUD: insert, get, list, update, delete for each table
+  - [x] Filesystem store: creation, listing, cleanup
+  - [x] `vault init` idempotency (running twice doesn't corrupt)
 
 ---
 

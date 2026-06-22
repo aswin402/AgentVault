@@ -14,15 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Added
 
 - **Core CLI commands**
-  - `vault init` — Initialize a new AgentVault workspace
-  - `vault install` — Install MCP servers and capabilities
-  - `vault remove` — Remove installed capabilities
-  - `vault update` — Update installed capabilities to latest compatible versions
+  - `vault install <source>` — Install MCP servers and capabilities
+  - `vault remove <name>` — Remove installed capabilities
+  - `vault update [name]` — Update installed capabilities to latest compatible versions
   - `vault list` — List all installed capabilities and their status
-  - `vault search` — Search the local registry for available capabilities
-  - `vault sync` — Synchronize capability configurations across all connected agents
-  - `vault doctor` — Diagnose workspace health and connectivity issues
-  - `vault status` — Display current workspace state and agent connections
+  - `vault search <query>` — Search the local registry for available capabilities
+  - `vault sync <agent>` — Synchronize capability configurations across all connected agents
   - `vault config` — View and modify AgentVault configuration
   - `vault import` — Import capability configurations from external sources
   - `vault export` — Export capability configurations for sharing or backup
@@ -31,12 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Gemini CLI connector — Read/write Gemini CLI MCP configuration
   - OpenCode connector — Read/write OpenCode MCP configuration
   - Codex CLI connector — Read/write Codex CLI MCP configuration
-- **SQLite-backed local registry** for capability metadata and state tracking
-- **Config backup before sync** — Automatic snapshots of agent configs prior to any write operation
 - **Environment variable management** per MCP server with secure storage
 - **Version pinning** — Lock capabilities to specific versions to prevent unintended upgrades
 - **Shell completions** for bash, zsh, fish, and PowerShell
-- **Structured logging** with `tracing` for diagnostics and debugging
 - **Cross-platform support** for Linux, macOS, and Windows
 
 ---
