@@ -9,7 +9,11 @@
 - **Target Dir Cleanup**: Ensures `<vault_dir>/mcps/<name>` is cleaned using `clean_target_dir` before starting, and recursively removed via `std::fs::remove_dir_all` if the venv creation or installation fails.
 - **Asynchronous Execution**: Used `tokio::process::Command` to run all command-line operations (scaffolding, installing, checking version) asynchronously.
 - **Command Resolution**: Implemented the `resolve_pypi_cmd` helper to locate an executable matching the package name (with underscores replaced by hyphens) in the virtualenv's binary folder (`venv/bin/` or `venv/Scripts/`, checking standard executable extensions on Windows). Falls back to the virtualenv's `python` path with `["-m", package_name]` args if no binary is found.
-- **Version Query**: Resolves the exact package version by running the virtual environment's Python to execute `importlib.metadata.version(package)` (falling back to `pkg_resources.get_distribution(package).version`), and defaults to `version_req` if the python query fails.
+- **Version Query**: Resolves the exact package version securely by running the virtual environment's Python to execute `sys.argv[1]` metadata extraction. It passes the package name as a command-line argument rather than embedding/formatting it directly into the Python code string (preventing script injection vulnerabilities):
+  - Runs `"import sys, importlib.metadata; print(importlib.metadata.version(sys.argv[1]))"`
+  - Falls back to `"import sys, pkg_resources; print(pkg_resources.get_distribution(sys.argv[1]).version)"`
+  - Defaults to `version_req` if the python query fails.
+- **Formatting**: Ran `cargo fmt --all` to format all source files dynamically according to the project rules.
 - **Unit Test**: Added `test_mcp_manager_install_pypi` in [manager_tests.rs](file:///home/aswin/programming/vscode/myProjects/ai_agent_tools/AgentVault/crates/vault-core/src/mcp/manager_tests.rs) using the zero-dependency `"six"` package. The test detects if Python or `uv` is available, runs the installation, asserts directory existence, and validates registry database serialization and retrieval.
 
 ## TDD Evidence
@@ -39,7 +43,7 @@
   test mcp::manager_tests::tests::test_mcp_manager_install_pypi ... ok
   test mcp::manager_tests::tests::test_mcp_manager_install_npm ... ok
 
-  test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.94s
+  test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.74s
   ```
 
 ## Files Changed
@@ -47,6 +51,7 @@
 - Test: [manager_tests.rs](file:///home/aswin/programming/vscode/myProjects/ai_agent_tools/AgentVault/crates/vault-core/src/mcp/manager_tests.rs)
 
 ## Self-Review Findings
-- **Completeness**: Successfully implements all 7 steps outlined in the PyPI installation task brief.
-- **Correctness**: Venv creation, package installation, launch command resolution, and version querying are fully implemented, verified, and passing under tests.
+- **Completeness**: Successfully implements all 7 steps outlined in the PyPI installation task brief and security mitigation reviews.
+- **Correctness**: Venv creation, package installation, launch command resolution, secure version querying, and formatting conform fully with the specifications.
+- **Security**: Mitigated potential python code injection by using `sys.argv` instead of string interpolation inside python scripts.
 - **Robustness**: Properly handles command failure, cleanup of temporary directories, path resolution across Unix/Windows, and fails gracefully to fallback values or errors.

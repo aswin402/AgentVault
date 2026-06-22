@@ -246,7 +246,8 @@ impl McpManager for DefaultMcpManager {
             if !has_uv && python_cmd.is_none() {
                 return Err(VaultError::McpInstall {
                     source_type: "pypi".to_string(),
-                    message: "Neither 'uv' nor 'python3'/'python' executable found in PATH".to_string(),
+                    message: "Neither 'uv' nor 'python3'/'python' executable found in PATH"
+                        .to_string(),
                 });
             }
 
@@ -285,12 +286,7 @@ impl McpManager for DefaultMcpManager {
                     )
                     .await?;
                 } else if let Some(ref py_cmd) = python_cmd {
-                    run_cmd(
-                        py_cmd,
-                        &["-m", "venv", &venv_dir.to_string_lossy()],
-                        "pypi",
-                    )
-                    .await?;
+                    run_cmd(py_cmd, &["-m", "venv", &venv_dir.to_string_lossy()], "pypi").await?;
                     let pip_path = if cfg!(windows) {
                         venv_dir.join("Scripts").join("pip.exe")
                     } else {
@@ -320,10 +316,8 @@ impl McpManager for DefaultMcpManager {
 
             let version = match tokio::process::Command::new(&venv_python)
                 .arg("-c")
-                .arg(format!(
-                    "import importlib.metadata; print(importlib.metadata.version('{}'))",
-                    package
-                ))
+                .arg("import sys, importlib.metadata; print(importlib.metadata.version(sys.argv[1]))")
+                .arg(package)
                 .output()
                 .await
             {
@@ -342,10 +336,8 @@ impl McpManager for DefaultMcpManager {
                 _ => {
                     match tokio::process::Command::new(&venv_python)
                         .arg("-c")
-                        .arg(format!(
-                            "import pkg_resources; print(pkg_resources.get_distribution('{}').version)",
-                            package
-                        ))
+                        .arg("import sys, pkg_resources; print(pkg_resources.get_distribution(sys.argv[1]).version)")
+                        .arg(package)
                         .output()
                         .await
                     {
@@ -511,20 +503,12 @@ fn resolve_npm_bin(
     Ok(("node".to_string(), vec![script_path_str]))
 }
 
-async fn run_cmd<I, S>(
-    cmd: &str,
-    args: I,
-    source_type: &str,
-) -> Result<(), VaultError>
+async fn run_cmd<I, S>(cmd: &str, args: I, source_type: &str) -> Result<(), VaultError>
 where
     I: IntoIterator<Item = S>,
     S: AsRef<std::ffi::OsStr>,
 {
-    match tokio::process::Command::new(cmd)
-        .args(args)
-        .output()
-        .await
-    {
+    match tokio::process::Command::new(cmd).args(args).output().await {
         Ok(out) if out.status.success() => Ok(()),
         Ok(out) => {
             let stderr = String::from_utf8_lossy(&out.stderr).into_owned();
