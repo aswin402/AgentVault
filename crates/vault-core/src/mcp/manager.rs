@@ -65,18 +65,7 @@ impl McpManager for DefaultMcpManager {
             if let Some(parent) = target_link.parent() {
                 std::fs::create_dir_all(parent)?;
             }
-            if target_link.symlink_metadata().is_ok() {
-                let meta = target_link.symlink_metadata()?;
-                if meta.is_dir() {
-                    if meta.file_type().is_symlink() {
-                        std::fs::remove_dir(&target_link)?;
-                    } else {
-                        std::fs::remove_dir_all(&target_link)?;
-                    }
-                } else {
-                    std::fs::remove_file(&target_link)?;
-                }
-            }
+            clean_target_dir(&target_link)?;
 
             #[cfg(unix)]
             std::os::unix::fs::symlink(path, &target_link)?;
@@ -125,6 +114,10 @@ impl McpManager for DefaultMcpManager {
 
             // 2. Create the target folder
             let target_dir = self.vault_dir.join("mcps").join(name);
+            if let Some(parent) = target_dir.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
+            clean_target_dir(&target_dir)?;
             std::fs::create_dir_all(&target_dir)?;
 
             // 3. Formulate package specification
@@ -240,6 +233,22 @@ impl McpManager for DefaultMcpManager {
     fn list(&self) -> Result<Vec<McpEntry>, VaultError> {
         self.registry.list_mcps()
     }
+}
+
+fn clean_target_dir(path: &std::path::Path) -> Result<(), VaultError> {
+    if path.symlink_metadata().is_ok() {
+        let meta = path.symlink_metadata()?;
+        if meta.is_dir() {
+            if meta.file_type().is_symlink() {
+                std::fs::remove_dir(path)?;
+            } else {
+                std::fs::remove_dir_all(path)?;
+            }
+        } else {
+            std::fs::remove_file(path)?;
+        }
+    }
+    Ok(())
 }
 
 fn resolve_npm_bin(

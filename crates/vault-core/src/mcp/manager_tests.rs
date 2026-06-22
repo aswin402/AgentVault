@@ -84,28 +84,32 @@ mod tests {
 
         // Use a known small package for testing
         let source = McpSource::Npm {
-            package: "express".to_string(),
+            package: "is-number".to_string(),
         };
         let entry = manager
             .install(
-                "express-mcp",
+                "is-number-mcp",
                 source,
                 "latest",
                 vec![],
                 std::collections::HashMap::new(),
                 vec![],
-                vec![],
+                vec!["npm-tag".to_string()],
                 None,
             )
             .await
             .unwrap();
 
-        assert_eq!(entry.name, "express-mcp");
+        assert_eq!(entry.name, "is-number-mcp");
         assert!(temp_vault_dir
             .path()
             .join("mcps")
-            .join("express-mcp")
+            .join("is-number-mcp")
             .join("package.json")
             .exists());
+
+        let fetched = manager.get("is-number-mcp").unwrap();
+        assert_eq!(fetched.name, "is-number-mcp");
+        assert_eq!(fetched.tags, vec!["npm-tag".to_string()]);
     }
 }
