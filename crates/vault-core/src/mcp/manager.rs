@@ -99,9 +99,10 @@ impl McpManager for DefaultMcpManager {
         if let McpSource::Npm { ref package } = source {
             // 1. Validate npm is available
             let npm_cmd = if cfg!(windows) { "npm.cmd" } else { "npm" };
-            match std::process::Command::new(npm_cmd)
+            match tokio::process::Command::new(npm_cmd)
                 .arg("--version")
                 .output()
+                .await
             {
                 Ok(output) if output.status.success() => {}
                 _ => {
@@ -128,16 +129,18 @@ impl McpManager for DefaultMcpManager {
             };
 
             // 4. Run npm install
-            let output = std::process::Command::new(npm_cmd)
+            let output = tokio::process::Command::new(npm_cmd)
                 .arg("install")
                 .arg("--prefix")
                 .arg(&target_dir)
                 .arg(&package_spec)
-                .output();
+                .output()
+                .await;
 
             match output {
                 Ok(out) if out.status.success() => {}
                 Ok(out) => {
+                    let _ = std::fs::remove_dir_all(&target_dir);
                     let stderr = String::from_utf8_lossy(&out.stderr).into_owned();
                     return Err(VaultError::McpInstall {
                         source_type: "npm".to_string(),
@@ -148,6 +151,7 @@ impl McpManager for DefaultMcpManager {
                     });
                 }
                 Err(e) => {
+                    let _ = std::fs::remove_dir_all(&target_dir);
                     return Err(VaultError::McpInstall {
                         source_type: "npm".to_string(),
                         message: format!("Failed to run npm: {}", e),
@@ -236,8 +240,7 @@ impl McpManager for DefaultMcpManager {
 }
 
 fn clean_target_dir(path: &std::path::Path) -> Result<(), VaultError> {
-    if path.symlink_metadata().is_ok() {
-        let meta = path.symlink_metadata()?;
+    if let Ok(meta) = path.symlink_metadata() {
         if meta.is_dir() {
             if meta.file_type().is_symlink() {
                 std::fs::remove_dir(path)?;
@@ -303,6 +306,17 @@ fn resolve_npm_bin(
         .join(&resolved_subpath);
 
     let script_path = std::fs::canonicalize(&script_path).unwrap_or(script_path);
+
+    if !script_path.exists() {
+        return Err(VaultError::McpInstall {
+            source_type: "npm".to_string(),
+            message: format!(
+                "Resolved script path does not exist: {}",
+                script_path.display()
+            ),
+        });
+    }
+
     let script_path_str = script_path.to_string_lossy().to_string();
 
     Ok(("node".to_string(), vec![script_path_str]))
