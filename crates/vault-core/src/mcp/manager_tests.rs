@@ -169,4 +169,113 @@ mod tests {
         assert_eq!(fetched.name, "six-mcp");
         assert_eq!(fetched.tags, vec!["pypi-tag".to_string()]);
     }
+
+    #[tokio::test]
+    async fn test_mcp_manager_remove() {
+        let temp_db_dir = tempdir().unwrap();
+        let db_path = temp_db_dir.path().join("vault.db");
+        let registry = Arc::new(SqliteRegistry::new(&db_path).unwrap());
+        let temp_vault_dir = tempdir().unwrap();
+        let manager = DefaultMcpManager::new(registry.clone(), temp_vault_dir.path().to_path_buf());
+
+        // Create dummy local path
+        let local_dir = tempdir().unwrap();
+        let script_path = local_dir.path().join("mcp_server.sh");
+        std::fs::write(&script_path, "#!/bin/sh\necho 'running'").unwrap();
+
+        let source = McpSource::Local {
+            path: local_dir.path().to_path_buf(),
+        };
+
+        // Install first
+        manager
+            .install(
+                "remove-mcp-test",
+                source,
+                "latest",
+                vec![],
+                std::collections::HashMap::new(),
+                vec![],
+                vec![],
+                None,
+            )
+            .await
+            .unwrap();
+
+        let target_link = temp_vault_dir.path().join("mcps").join("remove-mcp-test");
+        assert!(target_link.exists());
+        assert!(manager.get("remove-mcp-test").is_ok());
+
+        // Remove with keep_files = false
+        manager.remove("remove-mcp-test", false).await.unwrap();
+        assert!(!target_link.exists());
+        assert!(manager.get("remove-mcp-test").is_err());
+
+        // Reinstall and test keep_files = true
+        let local_dir_2 = tempdir().unwrap();
+        let source_2 = McpSource::Local {
+            path: local_dir_2.path().to_path_buf(),
+        };
+        manager
+            .install(
+                "remove-mcp-test",
+                source_2,
+                "latest",
+                vec![],
+                std::collections::HashMap::new(),
+                vec![],
+                vec![],
+                None,
+            )
+            .await
+            .unwrap();
+
+        let target_link_2 = temp_vault_dir.path().join("mcps").join("remove-mcp-test");
+        assert!(target_link_2.exists());
+        assert!(manager.get("remove-mcp-test").is_ok());
+
+        // Remove with keep_files = true
+        manager.remove("remove-mcp-test", true).await.unwrap();
+        assert!(target_link_2.exists());
+        assert!(manager.get("remove-mcp-test").is_err());
+    }
+
+    #[tokio::test]
+    async fn test_mcp_manager_update() {
+        let temp_db_dir = tempdir().unwrap();
+        let db_path = temp_db_dir.path().join("vault.db");
+        let registry = Arc::new(SqliteRegistry::new(&db_path).unwrap());
+        let temp_vault_dir = tempdir().unwrap();
+        let manager = DefaultMcpManager::new(registry.clone(), temp_vault_dir.path().to_path_buf());
+
+        // Create dummy local path
+        let local_dir = tempdir().unwrap();
+        let script_path = local_dir.path().join("mcp_server.sh");
+        std::fs::write(&script_path, "#!/bin/sh\necho 'running'").unwrap();
+
+        let source = McpSource::Local {
+            path: local_dir.path().to_path_buf(),
+        };
+
+        manager
+            .install(
+                "update-mcp-test",
+                source,
+                "latest",
+                vec![],
+                std::collections::HashMap::new(),
+                vec![],
+                vec![],
+                None,
+            )
+            .await
+            .unwrap();
+
+        assert!(manager.get("update-mcp-test").is_ok());
+
+        let updated = manager.update("update-mcp-test", false).await.unwrap();
+        assert_eq!(updated.name, "update-mcp-test");
+        assert!(manager.get("update-mcp-test").is_ok());
+    }
 }
+

@@ -397,18 +397,45 @@ impl McpManager for DefaultMcpManager {
         })
     }
 
-    async fn remove(&self, _name: &str, _keep_files: bool) -> Result<(), VaultError> {
-        Err(VaultError::NotFound {
-            kind: "mcp".to_string(),
-            name: _name.to_string(),
-        })
+    async fn remove(&self, name: &str, keep_files: bool) -> Result<(), VaultError> {
+        let entry = self.registry.get_mcp(name)?;
+        if !keep_files {
+            clean_target_dir(&entry.install_path)?;
+        }
+        self.registry.delete_mcp(name)?;
+        Ok(())
     }
 
-    async fn update(&self, _name: &str, _force: bool) -> Result<McpEntry, VaultError> {
-        Err(VaultError::NotFound {
-            kind: "mcp".to_string(),
-            name: _name.to_string(),
-        })
+    async fn update(&self, name: &str, force: bool) -> Result<McpEntry, VaultError> {
+        let entry = self.registry.get_mcp(name)?;
+        let version_req = if force {
+            "latest".to_string()
+        } else {
+            entry.version.clone()
+        };
+
+        // Temporarily delete to avoid insert_mcp's AlreadyExists check
+        self.registry.delete_mcp(name)?;
+
+        let result = self.install(
+            &entry.name,
+            entry.source.clone(),
+            &version_req,
+            entry.args.clone(),
+            entry.env_vars.clone(),
+            entry.agents.clone(),
+            entry.tags.clone(),
+            entry.description.clone(),
+        ).await;
+
+        match result {
+            Ok(new_entry) => Ok(new_entry),
+            Err(e) => {
+                // Try to restore registry entry on failure
+                let _ = self.registry.insert_mcp(&entry);
+                Err(e)
+            }
+        }
     }
 
     fn get(&self, name: &str) -> Result<McpEntry, VaultError> {
