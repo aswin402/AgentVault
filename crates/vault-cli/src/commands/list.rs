@@ -22,7 +22,8 @@ pub async fn handle(args: ListArgs, vault_dir_override: Option<&str>) -> Result<
         anyhow::bail!("Vault not initialized");
     }
 
-    let registry = Arc::new(SqliteRegistry::new(&db_path).context("Failed to open registry database")?);
+    let registry =
+        Arc::new(SqliteRegistry::new(&db_path).context("Failed to open registry database")?);
 
     let list_all = args.all || (!args.mcps && !args.skills && !args.workflows);
     let show_mcps = args.mcps || list_all;
@@ -42,7 +43,9 @@ pub async fn handle(args: ListArgs, vault_dir_override: Option<&str>) -> Result<
     };
 
     let workflows = if show_workflows {
-        registry.list_workflows().context("Failed to load workflows")?
+        registry
+            .list_workflows()
+            .context("Failed to load workflows")?
     } else {
         Vec::new()
     };
@@ -114,13 +117,7 @@ pub async fn handle(args: ListArgs, vault_dir_override: Option<&str>) -> Result<
                 let status_str = format_mcp_status(&mcp.status);
                 let desc_str = mcp.description.as_deref().unwrap_or("");
 
-                builder.push_record([
-                    &mcp.name,
-                    &mcp.version,
-                    &source_str,
-                    &status_str,
-                    desc_str,
-                ]);
+                builder.push_record([&mcp.name, &mcp.version, &source_str, &status_str, desc_str]);
             }
         }
         let mut table = builder.build();

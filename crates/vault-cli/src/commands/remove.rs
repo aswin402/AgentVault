@@ -19,7 +19,8 @@ pub async fn handle(args: RemoveArgs, vault_dir_override: Option<&str>) -> Resul
         anyhow::bail!("Vault not initialized");
     }
 
-    let registry = Arc::new(SqliteRegistry::new(&db_path).context("Failed to open registry database")?);
+    let registry =
+        Arc::new(SqliteRegistry::new(&db_path).context("Failed to open registry database")?);
     let manager = DefaultMcpManager::new(registry, vault_dir);
 
     // Verify it exists in registry

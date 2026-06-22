@@ -19,7 +19,8 @@ pub async fn handle(args: UpdateArgs, vault_dir_override: Option<&str>) -> Resul
         anyhow::bail!("Vault not initialized");
     }
 
-    let registry = Arc::new(SqliteRegistry::new(&db_path).context("Failed to open registry database")?);
+    let registry =
+        Arc::new(SqliteRegistry::new(&db_path).context("Failed to open registry database")?);
     let manager = DefaultMcpManager::new(registry.clone(), vault_dir);
 
     let mut names = Vec::new();
@@ -45,7 +46,12 @@ pub async fn handle(args: UpdateArgs, vault_dir_override: Option<&str>) -> Resul
     }
 
     if args.dry_run {
-        println!("{}", "Dry run enabled. The following updates would be performed:".bold().yellow());
+        println!(
+            "{}",
+            "Dry run enabled. The following updates would be performed:"
+                .bold()
+                .yellow()
+        );
         for name in &names {
             println!("  • Update MCP server: {}", name.cyan());
         }

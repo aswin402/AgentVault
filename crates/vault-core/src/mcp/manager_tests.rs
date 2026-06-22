@@ -278,4 +278,3 @@ mod tests {
         assert!(manager.get("update-mcp-test").is_ok());
     }
 }
-

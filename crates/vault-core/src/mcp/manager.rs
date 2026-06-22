@@ -417,16 +417,18 @@ impl McpManager for DefaultMcpManager {
         // Temporarily delete to avoid insert_mcp's AlreadyExists check
         self.registry.delete_mcp(name)?;
 
-        let result = self.install(
-            &entry.name,
-            entry.source.clone(),
-            &version_req,
-            entry.args.clone(),
-            entry.env_vars.clone(),
-            entry.agents.clone(),
-            entry.tags.clone(),
-            entry.description.clone(),
-        ).await;
+        let result = self
+            .install(
+                &entry.name,
+                entry.source.clone(),
+                &version_req,
+                entry.args.clone(),
+                entry.env_vars.clone(),
+                entry.agents.clone(),
+                entry.tags.clone(),
+                entry.description.clone(),
+            )
+            .await;
 
         match result {
             Ok(new_entry) => Ok(new_entry),
