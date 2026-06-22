@@ -58,5 +58,9 @@ mod tests {
             .join("mcps")
             .join("my-local-mcp")
             .exists());
+
+        let fetched = manager.get("my-local-mcp").unwrap();
+        assert_eq!(fetched.name, "my-local-mcp");
+        assert_eq!(fetched.tags, vec!["tag1".to_string()]);
     }
 }

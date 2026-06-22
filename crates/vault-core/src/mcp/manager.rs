@@ -67,8 +67,12 @@ impl McpManager for DefaultMcpManager {
             }
             if target_link.symlink_metadata().is_ok() {
                 let meta = target_link.symlink_metadata()?;
-                if meta.is_dir() && !meta.file_type().is_symlink() {
-                    std::fs::remove_dir_all(&target_link)?;
+                if meta.is_dir() {
+                    if meta.file_type().is_symlink() {
+                        std::fs::remove_dir(&target_link)?;
+                    } else {
+                        std::fs::remove_dir_all(&target_link)?;
+                    }
                 } else {
                     std::fs::remove_file(&target_link)?;
                 }
