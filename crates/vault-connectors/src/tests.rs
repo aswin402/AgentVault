@@ -32,7 +32,9 @@ fn test_sync_diff_methods() {
 #[cfg(test)]
 mod integration_tests {
     use crate::claude::ClaudeConnector;
+    use crate::codex::CodexConnector;
     use crate::gemini::GeminiConnector;
+    use crate::opencode::OpenCodeConnector;
     use crate::traits::AgentConnector;
     use chrono::Utc;
     use std::collections::HashMap;
@@ -382,5 +384,71 @@ mod integration_tests {
         assert!(connector.verify().unwrap());
         let config = connector.read_config().await.unwrap();
         assert!(config.mcp_servers.contains_key("server-a"));
+    }
+
+    #[tokio::test]
+    async fn test_opencode_connector_paths() {
+        let temp = tempdir().unwrap();
+        let config_path = temp.path().join("config.json");
+        let backup_dir = temp.path().join("backups");
+
+        let connector = OpenCodeConnector::new_with_paths(config_path.clone(), backup_dir);
+        assert_eq!(connector.config_path(), config_path.as_path());
+    }
+
+    #[tokio::test]
+    async fn test_opencode_connector_sync_success() {
+        let temp = tempdir().unwrap();
+        let config_path = temp.path().join("config.json");
+        let backup_dir = temp.path().join("backups");
+        let connector = OpenCodeConnector::new_with_paths(config_path.clone(), backup_dir);
+
+        let entry_a = create_test_mcp_entry("server-a", "node", vec![]);
+        let entry_b = create_test_mcp_entry("server-b", "python", vec![]);
+
+        let res = connector
+            .sync(&[entry_a.clone(), entry_b.clone()])
+            .await
+            .unwrap();
+        assert!(res.success);
+        assert_eq!(res.diff.additions.len(), 2);
+
+        let config = connector.read_config().await.unwrap();
+        assert_eq!(config.mcp_servers.len(), 2);
+        assert!(config.mcp_servers.contains_key("server-a"));
+        assert!(config.mcp_servers.contains_key("server-b"));
+    }
+
+    #[tokio::test]
+    async fn test_codex_connector_paths() {
+        let temp = tempdir().unwrap();
+        let config_path = temp.path().join("config.json");
+        let backup_dir = temp.path().join("backups");
+
+        let connector = CodexConnector::new_with_paths(config_path.clone(), backup_dir);
+        assert_eq!(connector.config_path(), config_path.as_path());
+    }
+
+    #[tokio::test]
+    async fn test_codex_connector_sync_success() {
+        let temp = tempdir().unwrap();
+        let config_path = temp.path().join("config.json");
+        let backup_dir = temp.path().join("backups");
+        let connector = CodexConnector::new_with_paths(config_path.clone(), backup_dir);
+
+        let entry_a = create_test_mcp_entry("server-a", "node", vec![]);
+        let entry_b = create_test_mcp_entry("server-b", "python", vec![]);
+
+        let res = connector
+            .sync(&[entry_a.clone(), entry_b.clone()])
+            .await
+            .unwrap();
+        assert!(res.success);
+        assert_eq!(res.diff.additions.len(), 2);
+
+        let config = connector.read_config().await.unwrap();
+        assert_eq!(config.mcp_servers.len(), 2);
+        assert!(config.mcp_servers.contains_key("server-a"));
+        assert!(config.mcp_servers.contains_key("server-b"));
     }
 }
