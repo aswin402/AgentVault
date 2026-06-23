@@ -2,6 +2,7 @@ pub mod agent;
 pub mod capability;
 pub mod config;
 pub mod error;
+pub mod manifest;
 pub mod mcp;
 pub mod registry;
 pub mod search;

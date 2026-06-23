@@ -139,3 +139,70 @@ impl std::fmt::Display for McpStatus {
         }
     }
 }
+
+impl std::str::FromStr for McpSource {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if let Some((prefix, rest)) = s.split_once(':') {
+            // Check if it's a Windows drive letter (e.g. C:\...)
+            if prefix.len() == 1 && prefix.chars().next().unwrap().is_ascii_alphabetic() {
+                return Ok(McpSource::Local {
+                    path: PathBuf::from(s),
+                });
+            }
+
+            match prefix.to_lowercase().as_str() {
+                "npm" => {
+                    return Ok(McpSource::Npm {
+                        package: rest.to_string(),
+                    })
+                }
+                "pypi" => {
+                    return Ok(McpSource::PyPi {
+                        package: rest.to_string(),
+                    })
+                }
+                "local" => {
+                    return Ok(McpSource::Local {
+                        path: PathBuf::from(rest),
+                    })
+                }
+                "github" => {
+                    let parts: Vec<&str> = rest.split('@').collect();
+                    let repo = parts[0].to_string();
+                    let ref_ = parts.get(1).map(|s| s.to_string());
+                    return Ok(McpSource::GitHub { repo, ref_ });
+                }
+                "docker" => {
+                    return Ok(McpSource::Docker {
+                        image: rest.to_string(),
+                    })
+                }
+                _ => {
+                    return Err(format!("Unknown source prefix: '{}'. Supported prefixes are: npm, pypi, local, github, docker.", prefix));
+                }
+            }
+        }
+
+        // Fallbacks
+        if s.starts_with('/')
+            || s.starts_with("./")
+            || s.starts_with("../")
+            || (s.contains('/') && !s.contains(':') && std::path::Path::new(s).exists())
+        {
+            Ok(McpSource::Local {
+                path: PathBuf::from(s),
+            })
+        } else if s.contains('/') {
+            let parts: Vec<&str> = s.split('@').collect();
+            let repo = parts[0].to_string();
+            let ref_ = parts.get(1).map(|s| s.to_string());
+            Ok(McpSource::GitHub { repo, ref_ })
+        } else {
+            Ok(McpSource::Npm {
+                package: s.to_string(),
+            })
+        }
+    }
+}
