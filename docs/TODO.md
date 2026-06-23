@@ -302,17 +302,17 @@
 
 ## Phase 5: Manifest & Declarative Config
 
-- [ ] Define `vault.toml` manifest format specification:
-  - [ ] `[vault]` section: name, version, description
-  - [ ] `[[mcp]]` entries: name, source, version constraint, env vars, transport overrides
-  - [ ] `[[skill]]` entries: name, source, version constraint
-  - [ ] `[[workflow]]` entries: name, source, version constraint
-  - [ ] `[agents]` section: list of agent connectors to sync
-- [ ] Implement `VaultManifest` struct and parser:
-  - [ ] Deserialize `vault.toml` with serde
-  - [ ] Validate all required fields present
-  - [ ] Validate semver constraints are parseable
-  - [ ] Validate source strings are well-formed
+- [x] Define `vault.toml` manifest format specification:
+  - [x] `[vault]` section: name, version, description
+  - [x] `[[mcp]]` entries: name, source, version constraint, env vars, transport overrides
+  - [x] `[[skill]]` entries: name, source, version constraint
+  - [x] `[[workflow]]` entries: name, source, version constraint
+  - [x] `[agents]` section: list of agent connectors to sync
+- [x] Implement `VaultManifest` struct and parser:
+  - [x] Deserialize `vault.toml` with serde
+  - [x] Validate all required fields present
+  - [x] Validate semver constraints are parseable
+  - [x] Validate source strings are well-formed
 - [ ] Implement `vault export` command:
   - [ ] Read current vault state from SQLite
   - [ ] Serialize to `vault.toml` format
