@@ -188,13 +188,13 @@ mod integration_tests {
         let backup_dir = temp.path().join("backups");
         let connector = ClaudeConnector::new_with_paths(config_path.clone(), backup_dir.clone());
 
-        let bp_empty = connector.backup().unwrap();
+        let bp_empty = connector.backup().await.unwrap();
         assert_eq!(bp_empty, PathBuf::new());
 
         let entry = create_test_mcp_entry("server-a", "node", vec![]);
         connector.sync(&[entry]).await.unwrap();
 
-        let bp = connector.backup().unwrap();
+        let bp = connector.backup().await.unwrap();
         assert!(bp.exists());
         assert!(bp.starts_with(&backup_dir));
 
@@ -210,19 +210,19 @@ mod integration_tests {
         let backup_dir = temp.path().join("backups");
         let connector = ClaudeConnector::new_with_paths(config_path.clone(), backup_dir);
 
-        assert!(!connector.verify().unwrap());
+        assert!(!connector.verify().await.unwrap());
 
         let entry = create_test_mcp_entry("server-a", "node", vec![]);
         connector.sync(&[entry]).await.unwrap();
-        assert!(connector.verify().unwrap());
+        assert!(connector.verify().await.unwrap());
 
-        let bp = connector.backup().unwrap();
+        let bp = connector.backup().await.unwrap();
 
         std::fs::write(&config_path, "invalid json content").unwrap();
-        assert!(!connector.verify().unwrap());
+        assert!(!connector.verify().await.unwrap());
 
         std::fs::copy(&bp, &config_path).unwrap();
-        assert!(connector.verify().unwrap());
+        assert!(connector.verify().await.unwrap());
         let config = connector.read_config().await.unwrap();
         assert!(config.mcp_servers.contains_key("server-a"));
     }
@@ -348,13 +348,13 @@ mod integration_tests {
         let backup_dir = temp.path().join("backups");
         let connector = GeminiConnector::new_with_paths(config_path.clone(), backup_dir.clone());
 
-        let bp_empty = connector.backup().unwrap();
+        let bp_empty = connector.backup().await.unwrap();
         assert_eq!(bp_empty, PathBuf::new());
 
         let entry = create_test_mcp_entry("server-a", "node", vec![]);
         connector.sync(&[entry]).await.unwrap();
 
-        let bp = connector.backup().unwrap();
+        let bp = connector.backup().await.unwrap();
         assert!(bp.exists());
         assert!(bp.starts_with(&backup_dir));
 
@@ -370,19 +370,19 @@ mod integration_tests {
         let backup_dir = temp.path().join("backups");
         let connector = GeminiConnector::new_with_paths(config_path.clone(), backup_dir);
 
-        assert!(!connector.verify().unwrap());
+        assert!(!connector.verify().await.unwrap());
 
         let entry = create_test_mcp_entry("server-a", "node", vec![]);
         connector.sync(&[entry]).await.unwrap();
-        assert!(connector.verify().unwrap());
+        assert!(connector.verify().await.unwrap());
 
-        let bp = connector.backup().unwrap();
+        let bp = connector.backup().await.unwrap();
 
         std::fs::write(&config_path, "invalid json content").unwrap();
-        assert!(!connector.verify().unwrap());
+        assert!(!connector.verify().await.unwrap());
 
         std::fs::copy(&bp, &config_path).unwrap();
-        assert!(connector.verify().unwrap());
+        assert!(connector.verify().await.unwrap());
         let config = connector.read_config().await.unwrap();
         assert!(config.mcp_servers.contains_key("server-a"));
     }

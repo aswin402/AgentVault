@@ -104,44 +104,62 @@ pub async fn handle(args: SyncArgs, vault_dir_override: Option<&str>) -> Result<
         };
 
         if let Some(connector) = connector {
-            if args.dry_run {
-                let diff = engine.dry_run(connector.as_ref()).await?;
-                println!("Dry run diff for {}:", agent_type.to_string().bold());
-                if diff.is_empty() {
-                    println!("  No changes.");
-                } else {
-                    for add in &diff.additions {
-                        println!("  + {} (add)", add.name.green());
-                    }
-                    for upd in &diff.updates {
-                        println!("  ~ {} (update)", upd.name.yellow());
-                    }
-                    if args.prune {
-                        for rem in &diff.removals {
-                            println!("  - {} (remove)", rem.name.red());
+            let res = if args.dry_run {
+                match engine.dry_run(connector.as_ref()).await {
+                    Ok(diff) => {
+                        println!("Dry run diff for {}:", agent_type.to_string().bold());
+                        if diff.is_empty() {
+                            println!("  No changes.");
+                        } else {
+                            for add in &diff.additions {
+                                println!("  + {} (add)", add.name.green());
+                            }
+                            for upd in &diff.updates {
+                                println!("  ~ {} (update)", upd.name.yellow());
+                            }
+                            if args.prune {
+                                for rem in &diff.removals {
+                                    println!("  - {} (remove)", rem.name.red());
+                                }
+                            }
                         }
+                        Ok(())
                     }
+                    Err(e) => Err(e),
                 }
             } else {
                 println!("Syncing to {}...", agent_type.to_string().bold());
-                let result = engine.sync_agent(connector.as_ref(), args.prune).await?;
-                if result.success {
-                    println!(
-                        "{} Successfully synced {}",
-                        "✓".green(),
-                        agent_type.to_string().bold()
-                    );
-                    if let Some(ref backup) = result.backup_path {
-                        println!("  Backup created: {}", backup);
+                match engine.sync_agent(connector.as_ref(), args.prune).await {
+                    Ok(result) => {
+                        if result.success {
+                            println!(
+                                "{} Successfully synced {}",
+                                "✓".green(),
+                                agent_type.to_string().bold()
+                            );
+                            if let Some(ref backup) = result.backup_path {
+                                println!("  Backup created: {}", backup);
+                            }
+                        } else {
+                            println!(
+                                "{} Failed to sync {}: {:?}",
+                                "✗".red(),
+                                agent_type.to_string().bold(),
+                                result.error
+                            );
+                        }
+                        Ok(())
                     }
-                } else {
-                    println!(
-                        "{} Failed to sync {}: {:?}",
-                        "✗".red(),
-                        agent_type.to_string().bold(),
-                        result.error
-                    );
+                    Err(e) => Err(e),
                 }
+            };
+            if let Err(e) = res {
+                eprintln!(
+                    "{} Error syncing agent {}: {}",
+                    "✗".red(),
+                    agent_type.to_string().bold(),
+                    e
+                );
             }
         } else {
             println!("{} Unknown or unsupported agent: {}", "✗".red(), agent_type);

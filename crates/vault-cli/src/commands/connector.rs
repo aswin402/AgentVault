@@ -60,6 +60,14 @@ pub async fn handle(args: ConnectorArgs, vault_dir_override: Option<&str>) -> Re
                 }
             };
 
+            if registry.get_agent_config(&agent_type.to_string()).is_ok() {
+                return Err(anyhow!(
+                    "Agent connector '{}' is already registered. Use `vault connector remove {}` to remove it first.",
+                    subargs.agent_type,
+                    subargs.agent_type
+                ));
+            }
+
             let config = AgentConnectorConfig {
                 id: uuid::Uuid::new_v4().to_string(),
                 agent_type,
