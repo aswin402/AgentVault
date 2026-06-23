@@ -57,6 +57,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Remote capability registry** — Discover and install capabilities from a shared registry
 - **Plugin system** for custom third-party connectors
 
+## [0.0.2] - 2026-06-23
+
+### Added
+
+- **MCP Management Core (Phase 2)**:
+  - Implemented `McpManager` and `DefaultMcpManager` supporting installing MCP servers from NPM, PyPI (utilizing `uv`/`pip` in virtual environment virtualenv), and Local folders (symlinked).
+  - Wired install, remove, list, and update subcommands in CLI.
+- **Agent Connectors (Phase 3)**:
+  - Defined generic `AgentConnector` trait and default methods for shared JSON config operations to maximize code reuse (reduced ~940 duplicate lines).
+  - Implemented Claude Code, Gemini CLI, OpenCode, and Codex CLI connectors.
+  - Implemented atomic config updates, backup, and JSON schema verification safeguards.
+  - Implemented database `sync_history` logging and `SyncEngine` runner.
+  - Wired `vault sync` and `vault connector` CLI subcommands.
+- **Search & Discovery (Phase 4)**:
+  - Implemented local fuzzy search registry matching (exact name, partial name, tag, and description matching).
+  - Implemented live remote npm registry search via API.
+  - Wired `vault search` CLI subcommand using tabled layouts and indicatif spinners.
+- **Manifest & Declarative Config (Phase 5 - Tasks 1 & 2)**:
+  - Designed TOML manifest schema for `vault.toml`.
+  - Implemented `VaultManifest` model, parser, and semantic validation rules.
+  - Wired `vault export` CLI subcommand to export database state to TOML/JSON.
+
 ---
 
 ## [0.0.1] - 2026-06-22
@@ -96,6 +118,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/aswin402/AgentVault/compare/v0.0.1...HEAD
+[Unreleased]: https://github.com/aswin402/AgentVault/compare/v0.0.2...HEAD
+[0.0.2]: https://github.com/aswin402/AgentVault/compare/v0.0.1...v0.0.2
 [0.0.1]: https://github.com/aswin402/AgentVault/compare/v0.0.0...v0.0.1
 [0.0.0]: https://github.com/aswin402/AgentVault/releases/tag/v0.0.0
