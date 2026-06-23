@@ -40,6 +40,7 @@ mod integration_tests {
     use std::collections::HashMap;
     use std::path::PathBuf;
     use tempfile::tempdir;
+    use vault_core::registry::Registry;
     use vault_core::mcp::models::{McpEntry, McpSource, McpStatus, McpTransport};
 
     fn create_test_mcp_entry(name: &str, command: &str, args: Vec<String>) -> McpEntry {

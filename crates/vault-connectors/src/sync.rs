@@ -2,19 +2,19 @@ use crate::traits::AgentConnector;
 use crate::types::{SyncDiff, SyncResult};
 use std::path::PathBuf;
 use std::sync::Arc;
-use vault_core::agent::{AgentConnectorConfig, SyncHistoryEntry};
+use vault_core::agent::SyncHistoryEntry;
 use vault_core::error::VaultError;
 use vault_core::mcp::models::McpEntry;
 use vault_core::registry::Registry;
 
 pub struct SyncEngine {
     registry: Arc<dyn Registry>,
-    backup_dir: PathBuf,
+    _backup_dir: PathBuf,
 }
 
 impl SyncEngine {
     pub fn new(registry: Arc<dyn Registry>, backup_dir: PathBuf) -> Self {
-        Self { registry, backup_dir }
+        Self { registry, _backup_dir: backup_dir }
     }
 
     pub async fn sync_agent(&self, connector: &dyn AgentConnector, prune: bool) -> Result<SyncResult, VaultError> {
