@@ -19,6 +19,9 @@ async-trait = "0.1"
 # Error handling
 thiserror.workspace = true
 
+# ID generation
+uuid.workspace = true
+
 # Logging
 tracing.workspace = true
 

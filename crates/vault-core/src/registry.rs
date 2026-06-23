@@ -40,6 +40,7 @@ pub trait Registry: Send + Sync {
     fn insert_agent_config(&self, config: &AgentConnectorConfig) -> Result<(), VaultError>;
     fn get_agent_config(&self, agent_type: &str) -> Result<AgentConnectorConfig, VaultError>;
     fn list_agent_configs(&self) -> Result<Vec<AgentConnectorConfig>, VaultError>;
+    fn update_agent_config(&self, config: &AgentConnectorConfig) -> Result<(), VaultError>;
     fn delete_agent_config(&self, agent_type: &str) -> Result<(), VaultError>;
 
     // Sync History operations
@@ -811,6 +812,33 @@ impl Registry for SqliteRegistry {
             results.push(r?);
         }
         Ok(results)
+    }
+
+    fn update_agent_config(&self, config: &AgentConnectorConfig) -> Result<(), VaultError> {
+        let conn = self.conn.lock().unwrap();
+        let last_synced_str = config.last_synced.map(|dt| dt.to_rfc3339());
+        let affected = conn.execute(
+            "UPDATE agent_configs SET
+                config_path = ?1,
+                enabled = ?2,
+                last_synced = ?3,
+                auto_sync = ?4
+             WHERE agent_type = ?5",
+            params![
+                config.config_path.to_string_lossy(),
+                if config.enabled { 1 } else { 0 },
+                last_synced_str,
+                if config.auto_sync { 1 } else { 0 },
+                config.agent_type.to_string()
+            ],
+        )?;
+        if affected == 0 {
+            return Err(VaultError::NotFound {
+                kind: "agent_config".to_string(),
+                name: config.agent_type.to_string(),
+            });
+        }
+        Ok(())
     }
 
     fn delete_agent_config(&self, agent_type: &str) -> Result<(), VaultError> {

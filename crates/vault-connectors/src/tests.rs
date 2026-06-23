@@ -451,4 +451,173 @@ mod integration_tests {
         assert!(config.mcp_servers.contains_key("server-a"));
         assert!(config.mcp_servers.contains_key("server-b"));
     }
+
+    #[tokio::test]
+    async fn test_sync_engine_initialization() {
+        use crate::sync::SyncEngine;
+        use vault_core::registry::SqliteRegistry;
+        use std::sync::Arc;
+
+        let temp = tempdir().unwrap();
+        let db_path = temp.path().join("vault.db");
+        let registry = Arc::new(SqliteRegistry::new(&db_path).unwrap());
+        let backup_dir = temp.path().join("backups");
+        
+        let _engine = SyncEngine::new(registry, backup_dir);
+    }
+
+    #[tokio::test]
+    async fn test_sync_engine_dry_run() {
+        use crate::sync::SyncEngine;
+        use crate::claude::ClaudeConnector;
+        use vault_core::registry::SqliteRegistry;
+        use vault_core::agent::{AgentConnectorConfig, AgentType};
+        use std::sync::Arc;
+
+        let temp = tempdir().unwrap();
+        let db_path = temp.path().join("vault.db");
+        let registry = Arc::new(SqliteRegistry::new(&db_path).unwrap());
+        let backup_dir = temp.path().join("backups");
+
+        let config_path = temp.path().join("claude_desktop_config.json");
+        let agent_config = AgentConnectorConfig {
+            id: uuid::Uuid::new_v4().to_string(),
+            agent_type: AgentType::ClaudeCode,
+            config_path: config_path.clone(),
+            enabled: true,
+            last_synced: None,
+            auto_sync: false,
+        };
+        registry.insert_agent_config(&agent_config).unwrap();
+
+        let mcp_entry = create_test_mcp_entry("my-server", "node", vec![]);
+        let mut mcp_entry_with_agent = mcp_entry.clone();
+        mcp_entry_with_agent.agents = vec!["claude".to_string()];
+        registry.insert_mcp(&mcp_entry_with_agent).unwrap();
+
+        let connector = ClaudeConnector::new_with_paths(config_path, backup_dir.clone());
+        let engine = SyncEngine::new(registry.clone(), backup_dir);
+
+        let diff = engine.dry_run(&connector).await.unwrap();
+        assert_eq!(diff.additions.len(), 1);
+        assert_eq!(diff.additions[0].name, "my-server");
+    }
+
+    #[tokio::test]
+    async fn test_sync_engine_sync_agent_prune_true() {
+        use crate::sync::SyncEngine;
+        use crate::claude::ClaudeConnector;
+        use vault_core::registry::SqliteRegistry;
+        use vault_core::agent::{AgentConnectorConfig, AgentType};
+        use std::sync::Arc;
+
+        let temp = tempdir().unwrap();
+        let db_path = temp.path().join("vault.db");
+        let registry = Arc::new(SqliteRegistry::new(&db_path).unwrap());
+        let backup_dir = temp.path().join("backups");
+
+        let config_path = temp.path().join("claude_desktop_config.json");
+        let agent_config = AgentConnectorConfig {
+            id: uuid::Uuid::new_v4().to_string(),
+            agent_type: AgentType::ClaudeCode,
+            config_path: config_path.clone(),
+            enabled: true,
+            last_synced: None,
+            auto_sync: false,
+        };
+        registry.insert_agent_config(&agent_config).unwrap();
+
+        let connector = ClaudeConnector::new_with_paths(config_path.clone(), backup_dir.clone());
+        let server_config = crate::types::AgentMcpConfig {
+            command: "python".to_string(),
+            args: vec!["existing.py".to_string()],
+            env: std::collections::HashMap::new(),
+        };
+        let mut config = connector.read_config().await.unwrap();
+        config.mcp_servers.insert("old-server".to_string(), server_config);
+        connector.write_config(&config).await.unwrap();
+
+        let mcp_entry = create_test_mcp_entry("new-server", "node", vec![]);
+        let mut mcp_entry_with_agent = mcp_entry.clone();
+        mcp_entry_with_agent.agents = vec!["claude".to_string()];
+        registry.insert_mcp(&mcp_entry_with_agent).unwrap();
+
+        let engine = SyncEngine::new(registry.clone(), backup_dir);
+
+        let result = engine.sync_agent(&connector, true).await.unwrap();
+        assert!(result.success);
+        assert_eq!(result.diff.additions.len(), 1);
+        assert_eq!(result.diff.additions[0].name, "new-server");
+        assert_eq!(result.diff.removals.len(), 1);
+        assert_eq!(result.diff.removals[0].name, "old-server");
+
+        let updated_config = connector.read_config().await.unwrap();
+        assert!(updated_config.mcp_servers.contains_key("new-server"));
+        assert!(!updated_config.mcp_servers.contains_key("old-server"));
+
+        let history = registry.get_sync_history("claude", 10).unwrap();
+        assert_eq!(history.len(), 1);
+        assert_eq!(history[0].action, "sync");
+        assert!(history[0].success);
+
+        let updated_agent_config = registry.get_agent_config("claude").unwrap();
+        assert!(updated_agent_config.last_synced.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_sync_engine_sync_agent_prune_false() {
+        use crate::sync::SyncEngine;
+        use crate::claude::ClaudeConnector;
+        use vault_core::registry::SqliteRegistry;
+        use vault_core::agent::{AgentConnectorConfig, AgentType};
+        use std::sync::Arc;
+
+        let temp = tempdir().unwrap();
+        let db_path = temp.path().join("vault.db");
+        let registry = Arc::new(SqliteRegistry::new(&db_path).unwrap());
+        let backup_dir = temp.path().join("backups");
+
+        let config_path = temp.path().join("claude_desktop_config.json");
+        let agent_config = AgentConnectorConfig {
+            id: uuid::Uuid::new_v4().to_string(),
+            agent_type: AgentType::ClaudeCode,
+            config_path: config_path.clone(),
+            enabled: true,
+            last_synced: None,
+            auto_sync: false,
+        };
+        registry.insert_agent_config(&agent_config).unwrap();
+
+        let connector = ClaudeConnector::new_with_paths(config_path.clone(), backup_dir.clone());
+        let server_config = crate::types::AgentMcpConfig {
+            command: "python".to_string(),
+            args: vec!["existing.py".to_string()],
+            env: std::collections::HashMap::new(),
+        };
+        let mut config = connector.read_config().await.unwrap();
+        config.mcp_servers.insert("old-server".to_string(), server_config);
+        connector.write_config(&config).await.unwrap();
+
+        let mcp_entry = create_test_mcp_entry("new-server", "node", vec![]);
+        let mut mcp_entry_with_agent = mcp_entry.clone();
+        mcp_entry_with_agent.agents = vec!["claude".to_string()];
+        registry.insert_mcp(&mcp_entry_with_agent).unwrap();
+
+        let engine = SyncEngine::new(registry.clone(), backup_dir);
+
+        let result = engine.sync_agent(&connector, false).await.unwrap();
+        assert!(result.success);
+        assert_eq!(result.diff.additions.len(), 1);
+        assert_eq!(result.diff.additions[0].name, "new-server");
+        assert_eq!(result.diff.removals.len(), 0);
+
+        let updated_config = connector.read_config().await.unwrap();
+        assert!(updated_config.mcp_servers.contains_key("new-server"));
+        assert!(updated_config.mcp_servers.contains_key("old-server"));
+
+        let history = registry.get_sync_history("claude", 10).unwrap();
+        assert_eq!(history.len(), 1);
+        assert!(history[0].success);
+    }
 }
+
