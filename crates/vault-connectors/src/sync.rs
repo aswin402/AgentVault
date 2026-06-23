@@ -14,10 +14,17 @@ pub struct SyncEngine {
 
 impl SyncEngine {
     pub fn new(registry: Arc<dyn Registry>, backup_dir: PathBuf) -> Self {
-        Self { registry, _backup_dir: backup_dir }
+        Self {
+            registry,
+            _backup_dir: backup_dir,
+        }
     }
 
-    pub async fn sync_agent(&self, connector: &dyn AgentConnector, prune: bool) -> Result<SyncResult, VaultError> {
+    pub async fn sync_agent(
+        &self,
+        connector: &dyn AgentConnector,
+        prune: bool,
+    ) -> Result<SyncResult, VaultError> {
         let all_mcps = self.registry.list_mcps()?;
         let agent_str = connector.agent_type().to_string();
         let filtered_mcps: Vec<McpEntry> = all_mcps
@@ -37,10 +44,8 @@ impl SyncEngine {
         let mut entries_to_sync = filtered_mcps;
         if !prune {
             if let Ok(config) = connector.read_config().await {
-                let existing_names: std::collections::HashSet<String> = entries_to_sync
-                    .iter()
-                    .map(|e| e.name.clone())
-                    .collect();
+                let existing_names: std::collections::HashSet<String> =
+                    entries_to_sync.iter().map(|e| e.name.clone()).collect();
                 for (name, server_config) in config.mcp_servers {
                     if !existing_names.contains(&name) {
                         // Create a dummy McpEntry to preserve this server
@@ -71,7 +76,7 @@ impl SyncEngine {
         }
 
         let mut result = connector.sync(&entries_to_sync).await?;
-        result.diff = diff; 
+        result.diff = diff;
 
         let history_entry = SyncHistoryEntry {
             id: uuid::Uuid::new_v4().to_string(),

@@ -40,8 +40,8 @@ mod integration_tests {
     use std::collections::HashMap;
     use std::path::PathBuf;
     use tempfile::tempdir;
-    use vault_core::registry::Registry;
     use vault_core::mcp::models::{McpEntry, McpSource, McpStatus, McpTransport};
+    use vault_core::registry::Registry;
 
     fn create_test_mcp_entry(name: &str, command: &str, args: Vec<String>) -> McpEntry {
         McpEntry {
@@ -456,24 +456,24 @@ mod integration_tests {
     #[tokio::test]
     async fn test_sync_engine_initialization() {
         use crate::sync::SyncEngine;
-        use vault_core::registry::SqliteRegistry;
         use std::sync::Arc;
+        use vault_core::registry::SqliteRegistry;
 
         let temp = tempdir().unwrap();
         let db_path = temp.path().join("vault.db");
         let registry = Arc::new(SqliteRegistry::new(&db_path).unwrap());
         let backup_dir = temp.path().join("backups");
-        
+
         let _engine = SyncEngine::new(registry, backup_dir);
     }
 
     #[tokio::test]
     async fn test_sync_engine_dry_run() {
-        use crate::sync::SyncEngine;
         use crate::claude::ClaudeConnector;
-        use vault_core::registry::SqliteRegistry;
-        use vault_core::agent::{AgentConnectorConfig, AgentType};
+        use crate::sync::SyncEngine;
         use std::sync::Arc;
+        use vault_core::agent::{AgentConnectorConfig, AgentType};
+        use vault_core::registry::SqliteRegistry;
 
         let temp = tempdir().unwrap();
         let db_path = temp.path().join("vault.db");
@@ -506,11 +506,11 @@ mod integration_tests {
 
     #[tokio::test]
     async fn test_sync_engine_sync_agent_prune_true() {
-        use crate::sync::SyncEngine;
         use crate::claude::ClaudeConnector;
-        use vault_core::registry::SqliteRegistry;
-        use vault_core::agent::{AgentConnectorConfig, AgentType};
+        use crate::sync::SyncEngine;
         use std::sync::Arc;
+        use vault_core::agent::{AgentConnectorConfig, AgentType};
+        use vault_core::registry::SqliteRegistry;
 
         let temp = tempdir().unwrap();
         let db_path = temp.path().join("vault.db");
@@ -535,7 +535,9 @@ mod integration_tests {
             env: std::collections::HashMap::new(),
         };
         let mut config = connector.read_config().await.unwrap();
-        config.mcp_servers.insert("old-server".to_string(), server_config);
+        config
+            .mcp_servers
+            .insert("old-server".to_string(), server_config);
         connector.write_config(&config).await.unwrap();
 
         let mcp_entry = create_test_mcp_entry("new-server", "node", vec![]);
@@ -567,11 +569,11 @@ mod integration_tests {
 
     #[tokio::test]
     async fn test_sync_engine_sync_agent_prune_false() {
-        use crate::sync::SyncEngine;
         use crate::claude::ClaudeConnector;
-        use vault_core::registry::SqliteRegistry;
-        use vault_core::agent::{AgentConnectorConfig, AgentType};
+        use crate::sync::SyncEngine;
         use std::sync::Arc;
+        use vault_core::agent::{AgentConnectorConfig, AgentType};
+        use vault_core::registry::SqliteRegistry;
 
         let temp = tempdir().unwrap();
         let db_path = temp.path().join("vault.db");
@@ -596,7 +598,9 @@ mod integration_tests {
             env: std::collections::HashMap::new(),
         };
         let mut config = connector.read_config().await.unwrap();
-        config.mcp_servers.insert("old-server".to_string(), server_config);
+        config
+            .mcp_servers
+            .insert("old-server".to_string(), server_config);
         connector.write_config(&config).await.unwrap();
 
         let mcp_entry = create_test_mcp_entry("new-server", "node", vec![]);
@@ -621,4 +625,3 @@ mod integration_tests {
         assert!(history[0].success);
     }
 }
-
