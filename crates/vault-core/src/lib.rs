@@ -4,6 +4,7 @@ pub mod config;
 pub mod error;
 pub mod mcp;
 pub mod registry;
+pub mod search;
 pub mod skill;
 pub mod store;
 pub mod workflow;
