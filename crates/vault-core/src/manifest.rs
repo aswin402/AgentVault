@@ -1,4 +1,5 @@
 use crate::error::VaultError;
+use crate::registry::Registry;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -61,6 +62,61 @@ pub struct AgentsManifestSection {
 }
 
 impl VaultManifest {
+    /// Create a VaultManifest from the current SQLite registry database.
+    pub fn from_registry(registry: &dyn Registry) -> Result<Self, VaultError> {
+        let mcps = registry.list_mcps()?;
+        let skills = registry.list_skills()?;
+        let workflows = registry.list_workflows()?;
+        let agent_configs = registry.list_agent_configs()?;
+
+        let mcp_entries = mcps
+            .into_iter()
+            .map(|m| McpManifestEntry {
+                name: m.name,
+                source: m.source.to_string(),
+                version: m.version,
+                env: m.env_vars,
+                args: m.args,
+            })
+            .collect();
+
+        let skill_entries = skills
+            .into_iter()
+            .map(|s| SkillManifestEntry {
+                name: s.name,
+                source: s.source.to_string(),
+                version: "latest".to_string(),
+            })
+            .collect();
+
+        let workflow_entries = workflows
+            .into_iter()
+            .map(|w| WorkflowManifestEntry {
+                name: w.name,
+                source: "local".to_string(),
+                version: "latest".to_string(),
+            })
+            .collect();
+
+        let sync_agents = agent_configs
+            .into_iter()
+            .filter(|ac| ac.enabled)
+            .map(|ac| ac.agent_type.to_string())
+            .collect();
+
+        Ok(VaultManifest {
+            vault: VaultMetadata {
+                name: "AgentVault".to_string(),
+                version: "0.0.1".to_string(),
+                description: Some("Declarative AgentVault Manifest".to_string()),
+            },
+            mcp: mcp_entries,
+            skill: skill_entries,
+            workflow: workflow_entries,
+            agents: AgentsManifestSection { sync: sync_agents },
+        })
+    }
+
     /// Parse a TOML string into a VaultManifest.
     pub fn parse(toml_content: &str) -> Result<Self, VaultError> {
         let manifest: Self = toml::from_str(toml_content)
@@ -236,5 +292,61 @@ mod tests {
             source = "invalid_prefix:something"
         "#;
         assert!(VaultManifest::parse(toml_str).is_err());
+    }
+
+    #[test]
+    fn test_from_registry() {
+        use crate::agent::{AgentConnectorConfig, AgentType};
+        use crate::mcp::models::{McpEntry, McpSource, McpStatus, McpTransport};
+        use crate::registry::SqliteRegistry;
+        use chrono::Utc;
+        use tempfile::tempdir;
+
+        let temp_dir = tempdir().unwrap();
+        let db_path = temp_dir.path().join("vault.db");
+        let registry = SqliteRegistry::new(&db_path).unwrap();
+
+        // 1. Insert dummy MCP
+        let mcp = McpEntry {
+            id: "mcp1".to_string(),
+            name: "fs".to_string(),
+            display_name: None,
+            version: "1.0.0".to_string(),
+            source: McpSource::Npm {
+                package: "filesystem".to_string(),
+            },
+            install_path: std::path::PathBuf::from("/vault/mcps/fs"),
+            command: "node".to_string(),
+            args: vec![],
+            env_vars: HashMap::new(),
+            transport: McpTransport::Stdio,
+            status: McpStatus::Active,
+            installed_at: Utc::now(),
+            updated_at: Utc::now(),
+            checksum: None,
+            agents: vec![],
+            tags: vec![],
+            description: None,
+        };
+        registry.insert_mcp(&mcp).unwrap();
+
+        // 2. Insert dummy Agent configuration
+        let agent = AgentConnectorConfig {
+            id: "agent1".to_string(),
+            agent_type: AgentType::ClaudeCode,
+            config_path: std::path::PathBuf::from("/home/.claude.json"),
+            enabled: true,
+            last_synced: None,
+            auto_sync: false,
+        };
+        registry.insert_agent_config(&agent).unwrap();
+
+        // 3. Generate manifest and assert
+        let manifest = VaultManifest::from_registry(&registry).unwrap();
+        assert_eq!(manifest.vault.name, "AgentVault");
+        assert_eq!(manifest.mcp.len(), 1);
+        assert_eq!(manifest.mcp[0].name, "fs");
+        assert_eq!(manifest.mcp[0].source, "npm:filesystem");
+        assert_eq!(manifest.agents.sync, vec!["claude"]);
     }
 }

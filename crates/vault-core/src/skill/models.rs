@@ -44,3 +44,25 @@ pub enum SkillSource {
         path: PathBuf,
     },
 }
+
+impl std::fmt::Display for SkillSource {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SkillSource::Git {
+                repo,
+                ref_,
+                subdirectory,
+            } => {
+                write!(f, "git:{}", repo)?;
+                if let Some(r) = ref_ {
+                    write!(f, "@{}", r)?;
+                }
+                if let Some(sub) = subdirectory {
+                    write!(f, "/{}", sub)?;
+                }
+                Ok(())
+            }
+            SkillSource::Local { path } => write!(f, "local:{}", path.display()),
+        }
+    }
+}
