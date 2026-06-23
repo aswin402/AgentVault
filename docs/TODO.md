@@ -313,11 +313,11 @@
   - [x] Validate all required fields present
   - [x] Validate semver constraints are parseable
   - [x] Validate source strings are well-formed
-- [ ] Implement `vault export` command:
-  - [ ] Read current vault state from SQLite
-  - [ ] Serialize to `vault.toml` format
-  - [ ] Write to `./vault.toml` (current directory) or `--output <path>`
-  - [ ] Print summary of exported capabilities
+- [x] Implement `vault export` command:
+  - [x] Read current vault state from SQLite
+  - [x] Serialize to `vault.toml` format
+  - [x] Write to `./vault.toml` (current directory) or `--output <path>`
+  - [x] Print summary of exported capabilities
 - [ ] Implement `vault import` command:
   - [ ] Parse `vault.toml` from given path (default: `./vault.toml`)
   - [ ] Diff declared capabilities against current vault state
