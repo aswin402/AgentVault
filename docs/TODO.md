@@ -273,11 +273,11 @@
 
 ## Phase 4: Search & Discovery
 
-- [ ] Implement local fuzzy search against registry:
-  - [ ] Search by name (fuzzy substring match)
-  - [ ] Search by tag
-  - [ ] Search by description keyword
-  - [ ] Rank results by relevance
+- [-] Implement local fuzzy search against registry:
+  - [x] Search by name (fuzzy substring match)
+  - [x] Search by tag
+  - [x] Search by description keyword
+  - [x] Rank results by relevance
 - [ ] Implement npm registry search via API:
   - [ ] Query `https://registry.npmjs.org/-/v1/search?text=<query>&size=20`
   - [ ] Parse response, extract name, version, description, keywords
@@ -293,8 +293,8 @@
   - [ ] Colored status indicators: green (installed), yellow (update available), dim (not installed)
   - [ ] Progress spinners for network requests (`indicatif`)
   - [ ] Dimmed metadata (install date, source) for scannability
-- [ ] Tests:
-  - [ ] Local fuzzy search: exact match, partial match, no match, tag match
+- [-] Tests:
+  - [x] Local fuzzy search: exact match, partial match, no match, tag match
   - [ ] npm search response parsing (mock HTTP responses)
   - [ ] Output formatting with various result counts
 
