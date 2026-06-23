@@ -273,29 +273,29 @@
 
 ## Phase 4: Search & Discovery
 
-- [-] Implement local fuzzy search against registry:
+- [x] Implement local fuzzy search against registry:
   - [x] Search by name (fuzzy substring match)
   - [x] Search by tag
   - [x] Search by description keyword
   - [x] Rank results by relevance
-- [ ] Implement npm registry search via API:
-  - [ ] Query `https://registry.npmjs.org/-/v1/search?text=<query>&size=20`
-  - [ ] Parse response, extract name, version, description, keywords
-  - [ ] Filter results relevant to MCP servers (keyword heuristics)
-- [ ] Implement `vault search` command:
-  - [ ] Default: search local registry first, then npm
-  - [ ] `--local` flag: search only local registry
-  - [ ] `--npm` flag: search only npm registry
-  - [ ] `--limit <n>` flag: limit number of results
-  - [ ] Show source indicator (local ✓ / npm ↓) for each result
-- [ ] Rich terminal output:
-  - [ ] Formatted tables with `tabled` for list/search results
-  - [ ] Colored status indicators: green (installed), yellow (update available), dim (not installed)
-  - [ ] Progress spinners for network requests (`indicatif`)
-  - [ ] Dimmed metadata (install date, source) for scannability
-- [-] Tests:
+- [x] Implement npm registry search via API:
+  - [x] Query `https://registry.npmjs.org/-/v1/search?text=<query>&size=20`
+  - [x] Parse response, extract name, version, description, keywords
+  - [x] Filter results relevant to MCP servers (keyword heuristics)
+- [x] Implement `vault search` command:
+  - [x] Default: search local registry first, then npm
+  - [x] `--local` flag: search only local registry
+  - [x] `--npm` flag: search only npm registry
+  - [x] `--limit <n>` flag: limit number of results
+  - [x] Show source indicator (local ✓ / npm ↓) for each result
+- [x] Rich terminal output:
+  - [x] Formatted tables with `tabled` for list/search results
+  - [x] Colored status indicators: green (installed), yellow (update available), dim (not installed)
+  - [x] Progress spinners for network requests (`indicatif`)
+  - [x] Dimmed metadata (install date, source) for scannability
+- [x] Tests:
   - [x] Local fuzzy search: exact match, partial match, no match, tag match
-  - [ ] npm search response parsing (mock HTTP responses)
+  - [x] npm search response parsing (mock HTTP responses)
   - [ ] Output formatting with various result counts
 
 ---
