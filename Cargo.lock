@@ -1908,6 +1908,7 @@ dependencies = [
  "clap",
  "clap_complete",
  "dialoguer",
+ "dirs",
  "indicatif",
  "owo-colors",
  "serde",
@@ -1917,6 +1918,7 @@ dependencies = [
  "toml",
  "tracing",
  "tracing-subscriber",
+ "uuid",
  "vault-connectors",
  "vault-core",
 ]

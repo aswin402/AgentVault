@@ -69,29 +69,20 @@ pub async fn handle(args: StatusArgs, vault_dir_override: Option<&str>) -> Resul
     println!("  Skills:        {}", skills.len());
     println!("  Workflows:     {}", workflows.len());
     println!();
-    println!("{}", "Agent Connectors:".bold().green());
+    println!("\nRegistered Connectors:");
     if agents.is_empty() {
-        println!(
-            "  No agent connectors registered. Run {} to add one.",
-            "vault connector add <agent>".yellow()
-        );
+        println!("  None");
     } else {
-        for a in agents {
-            let status_str = if a.enabled {
-                "enabled".green().to_string()
-            } else {
-                "disabled".red().to_string()
-            };
-            let sync_str = match a.last_synced {
-                Some(dt) => format!("last synced {}", dt.to_rfc3339()),
-                None => "never synced".yellow().to_string(),
-            };
+        for agent in agents {
+            let sync_time = agent
+                .last_synced
+                .map(|t| t.to_rfc3339())
+                .unwrap_or_else(|| "Never".to_string());
             println!(
-                "  • {} (Config: {}, {}, {})",
-                a.agent_type.to_string().bold(),
-                a.config_path.display(),
-                status_str,
-                sync_str
+                "  - {}: path={}, last_synced={}",
+                agent.agent_type.to_string().bold(),
+                agent.config_path.display(),
+                sync_time
             );
         }
     }
