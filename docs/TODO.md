@@ -318,24 +318,24 @@
   - [x] Serialize to `vault.toml` format
   - [x] Write to `./vault.toml` (current directory) or `--output <path>`
   - [x] Print summary of exported capabilities
-- [ ] Implement `vault import` command:
-  - [ ] Parse `vault.toml` from given path (default: `./vault.toml`)
-  - [ ] Diff declared capabilities against current vault state
-  - [ ] Install missing capabilities
-  - [ ] Update capabilities where version constraints differ
-  - [ ] Optionally remove capabilities not in manifest (`--prune` flag)
-  - [ ] Show progress for each install/update operation
-  - [ ] Print summary of changes applied
-- [ ] Implement diff between manifest and current state:
-  - [ ] `vault import --dry-run` to preview changes
-  - [ ] Categorize: to install, to update, to remove (if `--prune`), unchanged
-  - [ ] Display diff in readable table format
-- [ ] Tests:
-  - [ ] Round-trip: export → import on empty vault → verify state matches
-  - [ ] Import with `--prune`: removes unlisted capabilities
-  - [ ] Import idempotency: running twice produces no changes
-  - [ ] Manifest validation: reject malformed manifests with clear errors
-  - [ ] Partial failure: some installs succeed, some fail — verify rollback/report
+- [x] Implement `vault import` command:
+  - [x] Parse `vault.toml` from given path (default: `./vault.toml`)
+  - [x] Diff declared capabilities against current vault state
+  - [x] Install missing capabilities
+  - [x] Update capabilities where version constraints differ
+  - [x] Optionally remove capabilities not in manifest (`--prune` flag)
+  - [x] Show progress for each install/update operation
+  - [x] Print summary of changes applied
+- [x] Implement diff between manifest and current state:
+  - [x] `vault import --dry-run` to preview changes
+  - [x] Categorize: to install, to update, to remove (if `--prune`), unchanged
+  - [x] Display diff in readable table format
+- [x] Tests:
+  - [x] Round-trip: export → import on empty vault → verify state matches
+  - [x] Import with `--prune`: removes unlisted capabilities
+  - [x] Import idempotency: running twice produces no changes
+  - [x] Manifest validation: reject malformed manifests with clear errors
+  - [x] Partial failure: some installs succeed, some fail — verify rollback/report
 
 ---
 
