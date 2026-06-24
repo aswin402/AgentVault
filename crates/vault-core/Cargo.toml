@@ -12,6 +12,7 @@ toml.workspace = true
 
 # Error handling
 thiserror.workspace = true
+anyhow.workspace = true
 
 # Database
 rusqlite = { version = "0.31", features = ["bundled"] }

@@ -9,3 +9,5 @@ pub mod search;
 pub mod skill;
 pub mod store;
 pub mod workflow;
+pub mod watcher;
+
