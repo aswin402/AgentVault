@@ -87,6 +87,9 @@ pub enum Commands {
 
     /// Start the interactive TUI dashboard.
     Ui(UiArgs),
+
+    /// Watch agent configurations and re-synchronize on change.
+    Watch(WatchArgs),
 }
 
 // ─── vault init ──────────────────────────────────────────────────
@@ -587,4 +590,17 @@ pub struct UiArgs {
     /// Initial color theme (slate, nord, dracula, monokai).
     #[arg(short, long)]
     pub theme: Option<String>,
+}
+
+// ─── vault watch ──────────────────────────────────────────────────
+
+/// Watch agent configurations and re-synchronize on change.
+#[derive(Parser, Debug)]
+#[command(after_help = "Examples:\n  \
+        vault watch             # Run in foreground\n  \
+        vault watch --daemon    # Run in background as daemon")]
+pub struct WatchArgs {
+    /// Run as a background daemon.
+    #[arg(short, long)]
+    pub daemon: bool,
 }

@@ -13,3 +13,4 @@ pub mod status;
 pub mod sync;
 pub mod ui;
 pub mod update;
+pub mod watch;
