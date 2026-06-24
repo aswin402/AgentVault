@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-24
+
+### Added
+
+- **Dynamic MCP Server Gateway (`vault serve`)**: Run AgentVault itself as a standardized, stdio-compliant Model Context Protocol (MCP) server. Exposes capability listing, installation, and removal operations as native MCP tools, allowing AI agents to dynamically query and manage their own local environment capabilities.
+- **E2E Integration Testing**: Stream E2E JSON-RPC tests inside `test_e2e_serve_mcp` checking handshake, tool discovery, and routing parameters.
+
 ## [0.1.0] - 2026-06-24
 
 ### Added
@@ -125,7 +132,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/aswin402/AgentVault/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/aswin402/AgentVault/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/aswin402/AgentVault/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/aswin402/AgentVault/compare/v0.0.2...v0.1.0
 [0.0.2]: https://github.com/aswin402/AgentVault/compare/v0.0.1...v0.0.2
 [0.0.1]: https://github.com/aswin402/AgentVault/compare/v0.0.0...v0.0.1

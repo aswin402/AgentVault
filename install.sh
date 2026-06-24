@@ -5,7 +5,7 @@ REPO="aswin402/AgentVault"
 BINARY="vault"
 
 echo "============================================="
-echo " Installing AgentVault CLI v0.1.0"
+echo " Installing AgentVault CLI v0.2.0"
 echo "============================================="
 
 # Detect OS and architecture
@@ -57,9 +57,9 @@ echo "✓ Target Release Build: $TARGET"
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
-URL="https://github.com/$REPO/releases/download/v0.1.0/$BINARY-$TARGET.tar.gz"
+URL="https://github.com/$REPO/releases/download/v0.2.0/$BINARY-$TARGET.tar.gz"
 if [ "$TARGET" = "x86_64-pc-windows-msvc" ]; then
-    URL="https://github.com/$REPO/releases/download/v0.1.0/$BINARY-$TARGET.zip"
+    URL="https://github.com/$REPO/releases/download/v0.2.0/$BINARY-$TARGET.zip"
 fi
 
 echo "✓ Downloading release package..."
