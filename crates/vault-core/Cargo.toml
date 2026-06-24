@@ -44,3 +44,7 @@ dirs = "5"
 
 # Temp files
 tempfile.workspace = true
+
+# File system notification
+notify = "6.1.1"
+

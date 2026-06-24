@@ -40,6 +40,10 @@ uuid.workspace = true
 semver.workspace = true
 tempfile.workspace = true
 
+# File system notification
+notify = "6.1.1"
+
+
 [build-dependencies]
 clap = { version = "4", features = ["derive", "env"] }
 clap_mangen = "0.2"
