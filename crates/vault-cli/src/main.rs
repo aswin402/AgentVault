@@ -68,6 +68,7 @@ async fn run_command(command: Commands, vault_dir_override: Option<&str>) -> any
         }
         Commands::Export(subargs) => commands::export::handle(subargs, vault_dir_override).await?,
         Commands::Import(subargs) => commands::import::handle(subargs, vault_dir_override).await?,
+        Commands::Serve(subargs) => commands::serve::handle(subargs, vault_dir_override).await?,
         Commands::Completions(subargs) => {
             let mut cmd = Cli::command();
             let name = cmd.get_name().to_string();

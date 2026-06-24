@@ -249,3 +249,73 @@ fn test_e2e_edge_cases() {
         stderr
     );
 }
+
+#[test]
+fn test_e2e_serve_mcp() {
+    use std::io::{BufRead, Write};
+    let bin = get_bin_path();
+    let temp_vault = tempdir().unwrap();
+    let vault_dir = temp_vault.path().to_path_buf();
+
+    // Initialize the vault first
+    Command::new(&bin)
+        .arg("--vault-dir")
+        .arg(&vault_dir)
+        .arg("init")
+        .output()
+        .unwrap();
+
+    // Start serve command
+    let mut child = Command::new(&bin)
+        .arg("--vault-dir")
+        .arg(&vault_dir)
+        .arg("serve")
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .spawn()
+        .unwrap();
+
+    let mut stdin = child.stdin.take().unwrap();
+    let mut stdout = std::io::BufReader::new(child.stdout.take().unwrap());
+
+    // 1. Send initialize request
+    let init_req = r#"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}"#;
+    stdin
+        .write_all(format!("{}\n", init_req).as_bytes())
+        .unwrap();
+    stdin.flush().unwrap();
+
+    let mut line = String::new();
+    stdout.read_line(&mut line).unwrap();
+    assert!(line.contains("protocolVersion"), "Response: {}", line);
+    assert!(line.contains("agentvault"), "Response: {}", line);
+
+    // 2. Send tools/list request
+    line.clear();
+    let list_req = r#"{"jsonrpc":"2.0","id":2,"method":"tools/list"}"#;
+    stdin
+        .write_all(format!("{}\n", list_req).as_bytes())
+        .unwrap();
+    stdin.flush().unwrap();
+
+    stdout.read_line(&mut line).unwrap();
+    assert!(line.contains("list_capabilities"), "Response: {}", line);
+    assert!(line.contains("install_capability"), "Response: {}", line);
+
+    // 3. Send tools/call for list_capabilities
+    line.clear();
+    let call_req = r#"{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"list_capabilities","arguments":{}}}"#;
+    stdin
+        .write_all(format!("{}\n", call_req).as_bytes())
+        .unwrap();
+    stdin.flush().unwrap();
+
+    stdout.read_line(&mut line).unwrap();
+    assert!(line.contains("content"), "Response: {}", line);
+    assert!(line.contains("mcps"), "Response: {}", line);
+
+    // Shutdown by dropping stdin (EOF) or killing the child
+    std::mem::drop(stdin);
+    let _ = child.kill();
+    let _ = child.wait();
+}
