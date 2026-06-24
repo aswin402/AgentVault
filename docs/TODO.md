@@ -341,53 +341,53 @@
 
 ## Phase 6: Skills & Workflows
 
-- [ ] Define skill data models in `vault-core/src/models/skill.rs`:
-  - [ ] `SkillEntry` — name, version, source, path, tags, description, installed_at
-  - [ ] `SkillSource` enum — `Git { repo, ref }`, `Local { path }`
-- [ ] Implement `SkillManager` trait and default implementation:
-  - [ ] `install(source: SkillSource) -> Result<SkillEntry>`
-  - [ ] `remove(name: &str) -> Result<()>`
-  - [ ] `get(name: &str) -> Result<SkillEntry>`
-  - [ ] `list() -> Result<Vec<SkillEntry>>`
-- [ ] Skill installation from git repo:
-  - [ ] Clone into `~/.agentvault/skills/<name>/`
-  - [ ] Detect and validate `SKILL.md` presence
-  - [ ] Parse skill metadata from YAML frontmatter
-  - [ ] Register in SQLite
-- [ ] Skill installation from local path:
-  - [ ] Validate `SKILL.md` exists
-  - [ ] Symlink into `~/.agentvault/skills/<name>/`
-  - [ ] Register in SQLite
-- [ ] Skill listing and search:
-  - [ ] Extend `vault list --skills` to show skill-specific columns
-  - [ ] Extend `vault search` to include skills in results
-- [ ] Define workflow data models in `vault-core/src/models/workflow.rs`:
-  - [ ] `WorkflowEntry` — name, version, source, steps, dependencies, installed_at
-  - [ ] `WorkflowStep` — name, capability_ref, args, condition
-- [ ] Implement `WorkflowManager` trait and default implementation:
-  - [ ] `install(source: WorkflowSource) -> Result<WorkflowEntry>`
-  - [ ] `remove(name: &str) -> Result<()>`
-  - [ ] `get(name: &str) -> Result<WorkflowEntry>`
-  - [ ] `list() -> Result<Vec<WorkflowEntry>>`
-  - [ ] `validate(name: &str) -> Result<Vec<ValidationIssue>>` — check all deps are installed
-- [ ] Implement `workflow.toml` definition parsing:
-  - [ ] `[workflow]` section: name, version, description
-  - [ ] `[[step]]` entries: name, uses (capability ref), args, depends_on
-  - [ ] Validate DAG (no circular dependencies)
-- [ ] Implement dependency resolution for workflows:
-  - [ ] Topological sort of workflow steps
-  - [ ] Check all referenced capabilities are installed in vault
-  - [ ] Report missing dependencies with install suggestions
-- [ ] Extend `vault install` / `vault remove` / `vault list` for skills and workflows:
-  - [ ] `vault install --skill <source>` flag
-  - [ ] `vault install --workflow <source>` flag
-  - [ ] `vault remove` auto-detects capability type by name
-  - [ ] `vault list` supports `--skills`, `--workflows`, `--all` flags
-- [ ] Tests:
-  - [ ] Skill install from local path, verify SKILL.md parsed
-  - [ ] Workflow install, verify steps and deps parsed
-  - [ ] Dependency resolution: valid DAG, circular DAG (should error), missing deps
-  - [ ] List and search across all capability types
+- [x] Define skill data models in `vault-core/src/skill/models.rs`:
+  - [x] `SkillEntry` — name, source, path, tags, description, installed_at
+  - [x] `SkillSource` enum — `Git { repo, ref, subdirectory }`, `Local { path }`
+- [x] Implement `SkillManager` trait and default implementation:
+  - [x] `install(source: SkillSource) -> Result<SkillEntry>`
+  - [x] `remove(name: &str) -> Result<()>`
+  - [x] `get(name: &str) -> Result<SkillEntry>`
+  - [x] `list() -> Result<Vec<SkillEntry>>`
+- [x] Skill installation from git repo:
+  - [x] Clone into local vault directory
+  - [x] Detect and validate `SKILL.md` presence
+  - [x] Parse skill metadata from YAML frontmatter
+  - [x] Register in SQLite
+- [x] Skill installation from local path:
+  - [x] Validate `SKILL.md` exists
+  - [x] Symlink into local vault directory
+  - [x] Register in SQLite
+- [x] Skill listing and search:
+  - [x] Extend `vault list --skills` to show skill-specific columns
+  - [x] Extend `vault search` to include skills in results
+- [x] Define workflow data models in `vault-core/src/workflow/models.rs`:
+  - [x] `WorkflowEntry` — name, source, steps, dependencies, installed_at
+  - [x] `WorkflowStep` — name, uses (capability ref), args, depends_on, condition
+- [x] Implement `WorkflowManager` trait and default implementation:
+  - [x] `install(source: WorkflowSource) -> Result<WorkflowEntry>`
+  - [x] `remove(name: &str) -> Result<()>`
+  - [x] `get(name: &str) -> Result<WorkflowEntry>`
+  - [x] `list() -> Result<Vec<WorkflowEntry>>`
+  - [x] `validate(name: &str) -> Result<Vec<ValidationIssue>>` — check all deps are installed
+- [x] Implement `workflow.toml` definition parsing:
+  - [x] `[workflow]` section: name, version, description
+  - [x] `[[step]]` entries: name, uses (capability ref), args, depends_on
+  - [x] Validate DAG (no circular dependencies)
+- [x] Implement dependency resolution for workflows:
+  - [x] Topological sort of workflow steps
+  - [x] Check all referenced capabilities are installed in vault
+  - [x] Report missing dependencies with install suggestions
+- [x] Extend `vault install` / `vault remove` / `vault list` for skills and workflows:
+  - [x] `vault install --skill <source>` flag
+  - [x] `vault install --workflow <source>` flag
+  - [x] `vault remove` auto-detects capability type by name
+  - [x] `vault list` supports `--skills`, `--workflows`, `--all` flags
+- [x] Tests:
+  - [x] Skill install from local path, verify SKILL.md parsed
+  - [x] Workflow install, verify steps and deps parsed
+  - [x] Dependency resolution: valid DAG, circular DAG (should error), missing deps
+  - [x] List and search across all capability types
 
 ---
 
