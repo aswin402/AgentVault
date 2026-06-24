@@ -37,8 +37,8 @@ mod tests {
     use super::*;
     use std::fs::File;
     use std::io::Write;
-    use tempfile::tempdir;
     use std::time::Duration;
+    use tempfile::tempdir;
 
     #[tokio::test]
     async fn test_config_watcher_detects_changes() {
@@ -61,7 +61,9 @@ mod tests {
         // Receive event
         let mut detected = false;
         for _ in 0..10 {
-            if let Ok(Some(Ok(event))) = tokio::time::timeout(Duration::from_millis(100), watcher.next_event()).await {
+            if let Ok(Some(Ok(event))) =
+                tokio::time::timeout(Duration::from_millis(100), watcher.next_event()).await
+            {
                 if event.kind.is_modify() {
                     detected = true;
                     break;

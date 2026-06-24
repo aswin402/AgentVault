@@ -140,3 +140,32 @@ fn run_daemon(vault_dir: &Path, vault_dir_override: Option<&str>) -> Result<()> 
     cmd.spawn().context("Failed to spawn background process")?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    #[tokio::test]
+    async fn test_watch_fails_when_uninitialized() {
+        let dir = tempdir().unwrap();
+        let path_str = dir.path().to_str().unwrap();
+        let args = WatchArgs { daemon: false };
+        let res = handle(args, Some(path_str)).await;
+        assert!(res.is_err());
+        assert!(res.unwrap_err().to_string().contains("Vault is not initialized"));
+    }
+
+    #[tokio::test]
+    async fn test_watch_exits_early_when_no_watched_paths() {
+        let dir = tempdir().unwrap();
+        let db_path = dir.path().join("vault.db");
+        {
+            let _registry = SqliteRegistry::new(&db_path).unwrap();
+        }
+        let path_str = dir.path().to_str().unwrap();
+        let args = WatchArgs { daemon: false };
+        let res = handle(args, Some(path_str)).await;
+        assert!(res.is_ok());
+    }
+}
