@@ -1,11 +1,13 @@
 use anyhow::Result;
 use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
+use std::collections::HashSet;
 use std::path::PathBuf;
 use tokio::sync::mpsc;
 
 pub struct ConfigWatcher {
     watcher: RecommendedWatcher,
     rx: mpsc::Receiver<Result<Event, notify::Error>>,
+    target_files: HashSet<PathBuf>,
 }
 
 impl ConfigWatcher {
@@ -17,18 +19,36 @@ impl ConfigWatcher {
             },
             Config::default(),
         )?;
-        Ok(Self { watcher, rx })
+        Ok(Self {
+            watcher,
+            rx,
+            target_files: HashSet::new(),
+        })
     }
 
     pub fn watch(&mut self, path: PathBuf) -> Result<()> {
         if path.exists() {
-            self.watcher.watch(&path, RecursiveMode::NonRecursive)?;
+            if let Some(parent) = path.parent() {
+                self.watcher.watch(parent, RecursiveMode::NonRecursive)?;
+                self.target_files.insert(path);
+            }
         }
         Ok(())
     }
 
     pub async fn next_event(&mut self) -> Option<Result<Event, notify::Error>> {
-        self.rx.recv().await
+        loop {
+            match self.rx.recv().await {
+                Some(Ok(event)) => {
+                    let matches_target = event.paths.iter().any(|p| self.target_files.contains(p));
+                    if matches_target {
+                        return Some(Ok(event));
+                    }
+                }
+                Some(Err(e)) => return Some(Err(e)),
+                None => return None,
+            }
+        }
     }
 }
 

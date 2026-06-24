@@ -1,6 +1,6 @@
 use crate::cli::WatchArgs;
 use anyhow::{anyhow, Context, Result};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::sleep;
@@ -14,6 +14,32 @@ use vault_core::config::resolve_vault_dir;
 use vault_core::registry::{Registry, SqliteRegistry};
 use vault_core::watcher::ConfigWatcher;
 
+struct LockCleanup {
+    path: PathBuf,
+}
+
+impl Drop for LockCleanup {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.path);
+    }
+}
+
+fn is_process_running(pid: u32) -> bool {
+    #[cfg(unix)]
+    {
+        if let Ok(status) = std::process::Command::new("kill")
+            .arg("-0")
+            .arg(pid.to_string())
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status()
+        {
+            return status.success();
+        }
+    }
+    false
+}
+
 pub async fn handle(args: WatchArgs, vault_dir_override: Option<&str>) -> Result<()> {
     let vault_dir = resolve_vault_dir(vault_dir_override);
     let db_path = vault_dir.join("vault.db");
@@ -25,6 +51,22 @@ pub async fn handle(args: WatchArgs, vault_dir_override: Option<&str>) -> Result
     if args.daemon {
         return run_daemon(&vault_dir, vault_dir_override);
     }
+
+    // Check single-instance lock file
+    let lock_path = vault_dir.join("watcher.pid");
+    if lock_path.exists() {
+        if let Ok(content) = std::fs::read_to_string(&lock_path) {
+            if let Ok(pid) = content.trim().parse::<u32>() {
+                if is_process_running(pid) {
+                    return Err(anyhow!("Watcher is already running with PID {}", pid));
+                }
+            }
+        }
+    }
+    std::fs::write(&lock_path, std::process::id().to_string())?;
+    let _lock_cleanup = LockCleanup {
+        path: lock_path.clone(),
+    };
 
     println!("Starting AgentVault File Watcher in foreground...");
     let registry = Arc::new(SqliteRegistry::new(&db_path)?);
@@ -58,55 +100,68 @@ pub async fn handle(args: WatchArgs, vault_dir_override: Option<&str>) -> Result
 
     // Event loop with debouncing
     loop {
-        if let Some(Ok(event)) = watcher.next_event().await {
-            if event.kind.is_modify() {
-                // Sleep briefly to debounce double-writes (common in editors/agents writing files)
-                sleep(Duration::from_millis(250)).await;
+        match watcher.next_event().await {
+            Some(Ok(event)) => {
+                if event.kind.is_modify() {
+                    // Sleep briefly to debounce double-writes (common in editors/agents writing files)
+                    sleep(Duration::from_millis(250)).await;
 
-                // Clear any queued extra events during the debounce window
-                while let Ok(Some(_)) =
-                    tokio::time::timeout(Duration::from_millis(10), watcher.next_event()).await
-                {
-                }
+                    // Clear any queued extra events during the debounce window
+                    while let Ok(Some(Ok(_))) =
+                        tokio::time::timeout(Duration::from_millis(10), watcher.next_event()).await
+                    {
+                    }
 
-                println!("Modification detected. Re-synchronizing configurations...");
-                for (agent_type, path) in &watched_paths {
-                    let connector: Option<Box<dyn AgentConnector>> = match agent_type {
-                        AgentType::ClaudeCode => Some(Box::new(ClaudeConnector::new_with_paths(
-                            path.clone(),
-                            backup_dir.join("claude"),
-                        ))),
-                        AgentType::GeminiCli => Some(Box::new(GeminiConnector::new_with_paths(
-                            path.clone(),
-                            backup_dir.join("gemini"),
-                        ))),
-                        AgentType::OpenCode => Some(Box::new(OpenCodeConnector::new_with_paths(
-                            path.clone(),
-                            backup_dir.join("opencode"),
-                        ))),
-                        AgentType::CodexCli => Some(Box::new(CodexConnector::new_with_paths(
-                            path.clone(),
-                            backup_dir.join("codex"),
-                        ))),
-                        _ => None,
-                    };
+                    println!("Modification detected. Re-synchronizing modified configurations...");
+                    for (agent_type, path) in &watched_paths {
+                        if event.paths.contains(path) {
+                            let connector: Option<Box<dyn AgentConnector>> = match agent_type {
+                                AgentType::ClaudeCode => Some(Box::new(ClaudeConnector::new_with_paths(
+                                    path.clone(),
+                                    backup_dir.join("claude"),
+                                ))),
+                                AgentType::GeminiCli => Some(Box::new(GeminiConnector::new_with_paths(
+                                    path.clone(),
+                                    backup_dir.join("gemini"),
+                                ))),
+                                AgentType::OpenCode => Some(Box::new(OpenCodeConnector::new_with_paths(
+                                    path.clone(),
+                                    backup_dir.join("opencode"),
+                                ))),
+                                AgentType::CodexCli => Some(Box::new(CodexConnector::new_with_paths(
+                                    path.clone(),
+                                    backup_dir.join("codex"),
+                                ))),
+                                _ => None,
+                            };
 
-                    if let Some(conn) = connector {
-                        match sync_engine.sync_agent(conn.as_ref(), true).await {
-                            Ok(res) => {
-                                if res.success {
-                                    println!("✓ Re-synchronized configuration for {}", agent_type);
-                                } else if let Some(err) = res.error {
-                                    eprintln!("✗ Failed to sync {}: {}", agent_type, err);
+                            if let Some(conn) = connector {
+                                match sync_engine.sync_agent(conn.as_ref(), true).await {
+                                    Ok(res) => {
+                                        if res.success {
+                                            println!("✓ Re-synchronized configuration for {}", agent_type);
+                                        } else if let Some(err) = res.error {
+                                            eprintln!("✗ Failed to sync {}: {}", agent_type, err);
+                                        }
+                                    }
+                                    Err(e) => eprintln!("✗ Sync error for {}: {}", agent_type, e),
                                 }
                             }
-                            Err(e) => eprintln!("✗ Sync error for {}: {}", agent_type, e),
                         }
                     }
                 }
             }
+            Some(Err(e)) => {
+                eprintln!("Watcher error: {}", e);
+            }
+            None => {
+                eprintln!("Watcher event channel closed. Exiting.");
+                break;
+            }
         }
     }
+
+    Ok(())
 }
 
 fn run_daemon(vault_dir: &Path, vault_dir_override: Option<&str>) -> Result<()> {
