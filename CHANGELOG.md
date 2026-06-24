@@ -9,9 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Planned for v0.1.0 (MVP)
+## [0.1.0] - 2026-06-24
 
-#### Added
+### Added
 
 - **Core CLI commands**
   - `vault install <source>` — Install MCP servers and capabilities
@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `vault config` — View and modify AgentVault configuration
   - `vault import` — Import capability configurations from external sources
   - `vault export` — Export capability configurations for sharing or backup
+  - `vault completions <shell>` — Generate shell autocompletions script
+- **Capability Management Extensions**
+  - **Skills Management**: Model and install capability folders with `SKILL.md` frontmatter, supporting local paths and git repo cloning
+  - **Workflows Management**: Support execution of multi-step `workflow.toml` graphs with Kahn's algorithm cycle detection and unresolved capability checks
 - **Agent connectors**
   - Claude Code connector — Read/write Claude Code MCP configuration
   - Gemini CLI connector — Read/write Gemini CLI MCP configuration
@@ -32,6 +36,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Version pinning** — Lock capabilities to specific versions to prevent unintended upgrades
 - **Shell completions** for bash, zsh, fish, and PowerShell
 - **Cross-platform support** for Linux, macOS, and Windows
+- **Man Pages** — Generated at build time via `clap_mangen`
+- **Performance Optimizations** — Parallel updates check via tokio spawn and SQLite WAL mode connection settings
+- **User-Facing Polish** — Mapped suggestion context for error messages at the CLI boundary and global `--verbose` flag to dump the cause chain
 
 ---
 
@@ -118,7 +125,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/aswin402/AgentVault/compare/v0.0.2...HEAD
+[Unreleased]: https://github.com/aswin402/AgentVault/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/aswin402/AgentVault/compare/v0.0.2...v0.1.0
 [0.0.2]: https://github.com/aswin402/AgentVault/compare/v0.0.1...v0.0.2
 [0.0.1]: https://github.com/aswin402/AgentVault/compare/v0.0.0...v0.0.1
 [0.0.0]: https://github.com/aswin402/AgentVault/releases/tag/v0.0.0

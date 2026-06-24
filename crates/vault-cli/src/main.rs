@@ -14,9 +14,43 @@ async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt().with_env_filter(env_filter).init();
 
     let args = Cli::parse();
+    let verbose = args.verbose;
     let vault_dir_override = args.vault_dir.as_deref();
 
-    match args.command {
+    if let Err(e) = run_command(args.command, vault_dir_override).await {
+        use owo_colors::OwoColorize;
+        eprintln!("{} {}", "Error:".bold().red(), e);
+
+        // Find suggestion from any VaultError in the cause chain
+        let mut suggestion = None;
+        for cause in e.chain() {
+            if let Some(vault_err) = cause.downcast_ref::<vault_core::error::VaultError>() {
+                suggestion = vault_err.suggestion();
+                break;
+            }
+        }
+
+        if let Some(sug) = suggestion {
+            eprintln!("{} {}", "Suggestion:".bold().cyan(), sug);
+        }
+
+        if verbose {
+            eprintln!("\n{}", "Debug Context (Error Chain):".bold().yellow());
+            for (i, cause) in e.chain().enumerate() {
+                if i == 0 {
+                    continue;
+                }
+                eprintln!("  {:>2}. {}", i, cause);
+            }
+        }
+        std::process::exit(1);
+    }
+
+    Ok(())
+}
+
+async fn run_command(command: Commands, vault_dir_override: Option<&str>) -> anyhow::Result<()> {
+    match command {
         Commands::Init(subargs) => commands::init::handle(subargs, vault_dir_override).await?,
         Commands::Install(subargs) => {
             commands::install::handle(subargs, vault_dir_override).await?
@@ -65,6 +99,5 @@ async fn main() -> anyhow::Result<()> {
             }
         }
     }
-
     Ok(())
 }

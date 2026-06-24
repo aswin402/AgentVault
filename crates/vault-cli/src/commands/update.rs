@@ -58,29 +58,38 @@ pub async fn handle(args: UpdateArgs, vault_dir_override: Option<&str>) -> Resul
         return Ok(());
     }
 
-    for name in names {
-        println!(
-            "{} MCP server {}...",
-            "Updating".bold().green(),
-            name.bold().cyan()
-        );
+    let manager = Arc::new(manager);
+    let mut handles = Vec::new();
 
-        match manager.update(&name, args.force).await {
-            Ok(entry) => {
-                println!(
-                    "{} MCP server {} successfully updated! (version: {})",
-                    "Success".bold().green(),
-                    entry.name.bold().cyan(),
-                    entry.version.green()
-                );
-            }
-            Err(e) => {
-                println!(
-                    "{} Failed to update {}: {}",
-                    "Error:".bold().red(),
-                    name.bold().cyan(),
-                    e.to_string().red()
-                );
+    for name in names {
+        let manager_clone = manager.clone();
+        let force = args.force;
+        let handle = tokio::spawn(async move {
+            let res = manager_clone.update(&name, force).await;
+            (name, res)
+        });
+        handles.push(handle);
+    }
+
+    for handle in handles {
+        if let Ok((name, result)) = handle.await {
+            match result {
+                Ok(entry) => {
+                    println!(
+                        "{} MCP server {} successfully updated! (version: {})",
+                        "Success".bold().green(),
+                        entry.name.bold().cyan(),
+                        entry.version.green()
+                    );
+                }
+                Err(e) => {
+                    println!(
+                        "{} Failed to update {}: {}",
+                        "Error:".bold().red(),
+                        name.bold().cyan(),
+                        e.to_string().red()
+                    );
+                }
             }
         }
     }
