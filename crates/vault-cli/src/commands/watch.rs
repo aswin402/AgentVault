@@ -1,5 +1,6 @@
 use crate::cli::WatchArgs;
 use anyhow::{anyhow, Context, Result};
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -98,64 +99,94 @@ pub async fn handle(args: WatchArgs, vault_dir_override: Option<&str>) -> Result
     let backup_dir = vault_dir.join("backups");
     let sync_engine = vault_connectors::sync::SyncEngine::new(registry.clone(), backup_dir.clone());
 
-    // Event loop with debouncing
+    #[cfg(unix)]
+    let mut sigterm = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?;
+
+    // Event loop with debouncing and graceful shutdown
     loop {
-        match watcher.next_event().await {
-            Some(Ok(event)) => {
-                if event.kind.is_modify() {
-                    // Sleep briefly to debounce double-writes (common in editors/agents writing files)
-                    sleep(Duration::from_millis(250)).await;
+        #[cfg(unix)]
+        let term_fut = sigterm.recv();
+        #[cfg(not(unix))]
+        let term_fut = std::future::pending::<Option<()>>();
 
-                    // Clear any queued extra events during the debounce window
-                    while let Ok(Some(Ok(_))) =
-                        tokio::time::timeout(Duration::from_millis(10), watcher.next_event()).await
-                    {
-                    }
+        tokio::select! {
+            res = watcher.next_event() => {
+                match res {
+                    Some(Ok(event)) => {
+                        if event.kind.is_modify() || event.kind.is_create() {
+                            let mut modified_paths = HashSet::new();
+                            for p in event.paths {
+                                modified_paths.insert(p);
+                            }
 
-                    println!("Modification detected. Re-synchronizing modified configurations...");
-                    for (agent_type, path) in &watched_paths {
-                        if event.paths.contains(path) {
-                            let connector: Option<Box<dyn AgentConnector>> = match agent_type {
-                                AgentType::ClaudeCode => Some(Box::new(ClaudeConnector::new_with_paths(
-                                    path.clone(),
-                                    backup_dir.join("claude"),
-                                ))),
-                                AgentType::GeminiCli => Some(Box::new(GeminiConnector::new_with_paths(
-                                    path.clone(),
-                                    backup_dir.join("gemini"),
-                                ))),
-                                AgentType::OpenCode => Some(Box::new(OpenCodeConnector::new_with_paths(
-                                    path.clone(),
-                                    backup_dir.join("opencode"),
-                                ))),
-                                AgentType::CodexCli => Some(Box::new(CodexConnector::new_with_paths(
-                                    path.clone(),
-                                    backup_dir.join("codex"),
-                                ))),
-                                _ => None,
-                            };
+                            // Sleep briefly to debounce double-writes (common in editors/agents writing files)
+                            sleep(Duration::from_millis(250)).await;
 
-                            if let Some(conn) = connector {
-                                match sync_engine.sync_agent(conn.as_ref(), true).await {
-                                    Ok(res) => {
-                                        if res.success {
-                                            println!("✓ Re-synchronized configuration for {}", agent_type);
-                                        } else if let Some(err) = res.error {
-                                            eprintln!("✗ Failed to sync {}: {}", agent_type, err);
+                            // Clear any queued extra events during the debounce window and accumulate paths
+                            while let Ok(Some(Ok(next_event))) =
+                                tokio::time::timeout(Duration::from_millis(10), watcher.next_event()).await
+                            {
+                                if next_event.kind.is_modify() || next_event.kind.is_create() {
+                                    for p in next_event.paths {
+                                        modified_paths.insert(p);
+                                    }
+                                }
+                            }
+
+                            println!("Modification detected. Re-synchronizing modified configurations...");
+                            for (agent_type, path) in &watched_paths {
+                                if modified_paths.contains(path) {
+                                    let connector: Option<Box<dyn AgentConnector>> = match agent_type {
+                                        AgentType::ClaudeCode => Some(Box::new(ClaudeConnector::new_with_paths(
+                                            path.clone(),
+                                            backup_dir.join("claude"),
+                                        ))),
+                                        AgentType::GeminiCli => Some(Box::new(GeminiConnector::new_with_paths(
+                                            path.clone(),
+                                            backup_dir.join("gemini"),
+                                        ))),
+                                        AgentType::OpenCode => Some(Box::new(OpenCodeConnector::new_with_paths(
+                                            path.clone(),
+                                            backup_dir.join("opencode"),
+                                        ))),
+                                        AgentType::CodexCli => Some(Box::new(CodexConnector::new_with_paths(
+                                            path.clone(),
+                                            backup_dir.join("codex"),
+                                        ))),
+                                        _ => None,
+                                    };
+
+                                    if let Some(conn) = connector {
+                                        match sync_engine.sync_agent(conn.as_ref(), true).await {
+                                            Ok(res) => {
+                                                if res.success {
+                                                    println!("✓ Re-synchronized configuration for {}", agent_type);
+                                                } else if let Some(err) = res.error {
+                                                    eprintln!("✗ Failed to sync {}: {}", agent_type, err);
+                                                }
+                                            }
+                                            Err(e) => eprintln!("✗ Sync error for {}: {}", agent_type, e),
                                         }
                                     }
-                                    Err(e) => eprintln!("✗ Sync error for {}: {}", agent_type, e),
                                 }
                             }
                         }
                     }
+                    Some(Err(e)) => {
+                        eprintln!("Watcher error: {}", e);
+                    }
+                    None => {
+                        eprintln!("Watcher event channel closed. Exiting.");
+                        break;
+                    }
                 }
             }
-            Some(Err(e)) => {
-                eprintln!("Watcher error: {}", e);
+            _ = tokio::signal::ctrl_c() => {
+                println!("Ctrl+C received. Shutting down watcher gracefully...");
+                break;
             }
-            None => {
-                eprintln!("Watcher event channel closed. Exiting.");
+            _ = term_fut => {
+                println!("SIGTERM received. Shutting down watcher gracefully...");
                 break;
             }
         }

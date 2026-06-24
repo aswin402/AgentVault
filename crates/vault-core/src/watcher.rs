@@ -92,4 +92,49 @@ mod tests {
         }
         assert!(detected, "Watcher failed to detect file modification event");
     }
+
+    #[tokio::test]
+    async fn test_config_watcher_multiple_files() {
+        let dir = tempdir().unwrap();
+        let file_path1 = dir.path().join("config1.json");
+        let file_path2 = dir.path().join("config2.json");
+        {
+            let mut f1 = File::create(&file_path1).unwrap();
+            writeln!(f1, "{{}}").unwrap();
+            let mut f2 = File::create(&file_path2).unwrap();
+            writeln!(f2, "{{}}").unwrap();
+        }
+
+        let mut watcher = ConfigWatcher::new().unwrap();
+        watcher.watch(file_path1.clone()).unwrap();
+        watcher.watch(file_path2.clone()).unwrap();
+
+        // Write changes to both files
+        {
+            let mut f1 = File::create(&file_path1).unwrap();
+            writeln!(f1, "{{\"changed\": true}}").unwrap();
+            let mut f2 = File::create(&file_path2).unwrap();
+            writeln!(f2, "{{\"changed\": true}}").unwrap();
+        }
+
+        // Receive events
+        let mut detected_paths = HashSet::new();
+        for _ in 0..10 {
+            if let Ok(Some(Ok(event))) =
+                tokio::time::timeout(Duration::from_millis(100), watcher.next_event()).await
+            {
+                for p in event.paths {
+                    detected_paths.insert(p);
+                }
+            }
+        }
+        assert!(
+            detected_paths.contains(&file_path1),
+            "Watcher failed to detect config1.json modification"
+        );
+        assert!(
+            detected_paths.contains(&file_path2),
+            "Watcher failed to detect config2.json modification"
+        );
+    }
 }
