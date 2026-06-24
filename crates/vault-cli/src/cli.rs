@@ -84,6 +84,9 @@ pub enum Commands {
 
     /// Start AgentVault as a Model Context Protocol (MCP) server.
     Serve(ServeArgs),
+
+    /// Start the interactive TUI dashboard.
+    Ui(UiArgs),
 }
 
 // ─── vault init ──────────────────────────────────────────────────
@@ -574,3 +577,14 @@ pub enum CompletionShell {
 #[derive(Parser, Debug)]
 #[command(after_help = "Examples:\n  vault serve             # Start stdio-based MCP server")]
 pub struct ServeArgs {}
+
+// ─── vault ui ─────────────────────────────────────────────────────
+
+/// Start the interactive TUI dashboard.
+#[derive(Parser, Debug)]
+#[command(after_help = "Examples:\n  vault ui             # Start interactive TUI dashboard")]
+pub struct UiArgs {
+    /// Initial color theme (slate, nord, dracula, monokai).
+    #[arg(short, long)]
+    pub theme: Option<String>,
+}

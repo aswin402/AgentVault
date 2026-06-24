@@ -11,4 +11,5 @@ pub mod search;
 pub mod serve;
 pub mod status;
 pub mod sync;
+pub mod ui;
 pub mod update;
