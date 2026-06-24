@@ -153,7 +153,10 @@ mod tests {
         let args = WatchArgs { daemon: false };
         let res = handle(args, Some(path_str)).await;
         assert!(res.is_err());
-        assert!(res.unwrap_err().to_string().contains("Vault is not initialized"));
+        assert!(res
+            .unwrap_err()
+            .to_string()
+            .contains("Vault is not initialized"));
     }
 
     #[tokio::test]
