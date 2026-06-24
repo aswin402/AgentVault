@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-06-24
+
+### Added
+
+- **Interactive TUI Dashboard (`vault ui`)**: A minimalist, multi-pane terminal interface built with `ratatui` and `crossterm`.
+  - Built-in color themes (`slate`, `nord`, `dracula`, `monokai`) toggleable dynamically with key `t` or loaded via `--theme` flags.
+  - Explore installed capabilities (MCP servers, skills, workflows) with a detailed metadata explorer.
+  - Interactive shortcuts to run sync configurations (`s`), trigger doctor health checks (`d`), or update selected MCP servers (`u`) directly from the dashboard.
+  - Multi-pane interface with action logs tracing sync/update operations in real time.
+
 ## [0.2.0] - 2026-06-24
 
 ### Added
