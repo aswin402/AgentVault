@@ -30,15 +30,17 @@ pub struct WorkflowStep {
     /// Human-readable name for this step.
     pub name: String,
 
-    /// Optional MCP server ID this step invokes.
-    pub mcp_id: Option<String>,
-
-    /// Optional skill ID this step invokes.
-    pub skill_id: Option<String>,
+    /// Capability reference: "mcp:name" or "skill:name"
+    pub uses: String,
 
     /// Step-specific configuration key-value pairs.
-    pub config: HashMap<String, String>,
+    #[serde(default)]
+    pub args: HashMap<String, String>,
 
     /// Names of other steps this step depends on (must complete first).
+    #[serde(default)]
     pub depends_on: Vec<String>,
+
+    /// Optional condition to execute this step.
+    pub condition: Option<String>,
 }

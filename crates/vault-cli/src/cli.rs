@@ -171,6 +171,14 @@ pub struct InstallArgs {
     /// Skip confirmation prompt.
     #[arg(short = 'y', long)]
     pub yes: bool,
+
+    /// Install as a skill.
+    #[arg(long, conflicts_with_all = &["workflow", "version", "env_vars", "args", "transport", "url"])]
+    pub skill: bool,
+
+    /// Install as a workflow.
+    #[arg(long, conflicts_with_all = &["skill", "version", "env_vars", "args", "transport", "url", "agents", "tags"])]
+    pub workflow: bool,
 }
 
 #[derive(ValueEnum, Debug, Clone)]

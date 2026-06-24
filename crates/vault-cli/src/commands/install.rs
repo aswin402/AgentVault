@@ -9,6 +9,11 @@ use vault_core::mcp::manager::{DefaultMcpManager, McpManager};
 use vault_core::mcp::models::McpSource;
 use vault_core::registry::SqliteRegistry;
 
+use vault_core::skill::manager::SkillManager;
+use vault_core::skill::models::SkillSource;
+use vault_core::workflow::manager::WorkflowManager;
+use vault_core::workflow::manager::WorkflowSource;
+
 pub async fn handle(args: InstallArgs, vault_dir_override: Option<&str>) -> Result<()> {
     let vault_dir = resolve_vault_dir(vault_dir_override);
     let db_path = vault_dir.join("vault.db");
@@ -24,6 +29,67 @@ pub async fn handle(args: InstallArgs, vault_dir_override: Option<&str>) -> Resu
 
     let registry =
         Arc::new(SqliteRegistry::new(&db_path).context("Failed to open registry database")?);
+
+    // ─── Skill Installation ───
+    if args.skill {
+        let source = parse_skill_source(&args.source)?;
+        println!(
+            "{} Skill from {}...",
+            "Installing".bold().green(),
+            args.source.bold().cyan()
+        );
+        let skill_manager =
+            vault_core::skill::manager::DefaultSkillManager::new(registry, vault_dir);
+        let entry = skill_manager
+            .install(source, args.agents, args.tags)
+            .await?;
+        println!(
+            "{} Skill {} successfully installed! (path: {})",
+            "Success".bold().green(),
+            entry.name.bold().cyan(),
+            entry.path.display().yellow()
+        );
+        return Ok(());
+    }
+
+    // ─── Workflow Installation ───
+    if args.workflow {
+        let source = parse_workflow_source(&args.source)?;
+        println!(
+            "{} Workflow from {}...",
+            "Installing".bold().green(),
+            args.source.bold().cyan()
+        );
+        let workflow_manager =
+            vault_core::workflow::manager::DefaultWorkflowManager::new(registry, vault_dir);
+        let entry = workflow_manager.install(source).await?;
+        println!(
+            "{} Workflow {} successfully installed! (steps: {})",
+            "Success".bold().green(),
+            entry.name.bold().cyan(),
+            entry.steps.len().to_string().yellow()
+        );
+
+        // Validate dependencies
+        let issues = workflow_manager.validate(&entry.name)?;
+        if !issues.is_empty() {
+            println!(
+                "\n{} Workflow installed with unresolved dependencies:",
+                "Warning:".bold().yellow()
+            );
+            for issue in issues {
+                println!(
+                    "  - Step '{}': {}",
+                    issue.step_name.bold(),
+                    issue.message.yellow()
+                );
+            }
+            println!("Please install the missing capabilities to run the workflow.");
+        }
+        return Ok(());
+    }
+
+    // ─── MCP Installation ───
     let manager = DefaultMcpManager::new(registry, vault_dir);
 
     let source = parse_source(&args.source, args.source_type.as_ref())?;
@@ -74,6 +140,98 @@ pub async fn handle(args: InstallArgs, vault_dir_override: Option<&str>) -> Resu
     );
 
     Ok(())
+}
+
+fn parse_skill_source(source: &str) -> Result<SkillSource> {
+    if let Some((prefix, rest)) = source.split_once(':') {
+        match prefix.to_lowercase().as_str() {
+            "local" => {
+                return Ok(SkillSource::Local {
+                    path: PathBuf::from(rest),
+                });
+            }
+            "git" | "github" => {
+                let parts: Vec<&str> = rest.split('@').collect();
+                let repo_url = if parts[0].starts_with("http") || parts[0].starts_with("git@") {
+                    parts[0].to_string()
+                } else {
+                    format!("https://github.com/{}.git", parts[0])
+                };
+                let ref_ = parts.get(1).map(|s| s.to_string());
+                return Ok(SkillSource::Git {
+                    repo: repo_url,
+                    ref_,
+                    subdirectory: None,
+                });
+            }
+            _ => {}
+        }
+    }
+
+    if source.starts_with('/')
+        || source.starts_with("./")
+        || source.starts_with("../")
+        || std::path::Path::new(source).exists()
+    {
+        Ok(SkillSource::Local {
+            path: PathBuf::from(source),
+        })
+    } else {
+        let parts: Vec<&str> = source.split('@').collect();
+        let repo_url = format!("https://github.com/{}.git", parts[0]);
+        let ref_ = parts.get(1).map(|s| s.to_string());
+        Ok(SkillSource::Git {
+            repo: repo_url,
+            ref_,
+            subdirectory: None,
+        })
+    }
+}
+
+fn parse_workflow_source(source: &str) -> Result<WorkflowSource> {
+    if let Some((prefix, rest)) = source.split_once(':') {
+        match prefix.to_lowercase().as_str() {
+            "local" => {
+                return Ok(WorkflowSource::Local {
+                    path: PathBuf::from(rest),
+                });
+            }
+            "git" | "github" => {
+                let parts: Vec<&str> = rest.split('@').collect();
+                let repo_url = if parts[0].starts_with("http") || parts[0].starts_with("git@") {
+                    parts[0].to_string()
+                } else {
+                    format!("https://github.com/{}.git", parts[0])
+                };
+                let ref_ = parts.get(1).map(|s| s.to_string());
+                return Ok(WorkflowSource::Git {
+                    repo: repo_url,
+                    ref_,
+                    subdirectory: None,
+                });
+            }
+            _ => {}
+        }
+    }
+
+    if source.starts_with('/')
+        || source.starts_with("./")
+        || source.starts_with("../")
+        || std::path::Path::new(source).exists()
+    {
+        Ok(WorkflowSource::Local {
+            path: PathBuf::from(source),
+        })
+    } else {
+        let parts: Vec<&str> = source.split('@').collect();
+        let repo_url = format!("https://github.com/{}.git", parts[0]);
+        let ref_ = parts.get(1).map(|s| s.to_string());
+        Ok(WorkflowSource::Git {
+            repo: repo_url,
+            ref_,
+            subdirectory: None,
+        })
+    }
 }
 
 fn parse_source(source: &str, source_type_override: Option<&SourceType>) -> Result<McpSource> {
