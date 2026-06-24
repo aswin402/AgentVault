@@ -510,7 +510,7 @@ pub enum ExportFormat {
 /// Reads a vault.toml (or JSON) file and installs any capabilities
 /// that are not already present in the vault. Optionally prunes
 /// capabilities not in the manifest.
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Clone)]
 #[command(after_help = "Examples:\n  \
         vault import vault.toml\n  \
         vault import vault.toml --dry-run\n  \
