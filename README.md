@@ -11,7 +11,8 @@
 
 <p align="center">
   <b>Install once. Use everywhere.</b><br/>
-  Unified local capability management for all your AI coding agents.
+  Unified local capability management for all your AI coding agents.<br/>
+  <sub>vibecoded by aswin</sub>
 </p>
 
 ---
@@ -195,3 +196,9 @@ cargo fmt --all
 ## 📄 License
 
 This project is licensed under the [MIT License](LICENSE).
+
+---
+
+<p align="center">
+  <sub>vibecoded by aswin</sub>
+</p>
