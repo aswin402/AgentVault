@@ -31,7 +31,7 @@ pub async fn ping_mcp_server(mcp: &McpEntry, handshake_timeout: Duration) -> Res
             "capabilities": {},
             "clientInfo": {
                 "name": "AgentVault-Doctor",
-                "version": "0.2.1"
+                "version": env!("CARGO_PKG_VERSION")
             }
         }
     });

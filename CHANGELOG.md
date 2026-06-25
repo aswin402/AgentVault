@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-06-25
+
+### Added
+
+- **MCP Health Checking (`vault doctor --check-mcps`)**: A diagnostic check verifying the responsiveness of installed MCP servers.
+  - Spawns each registered server and performs an `initialize` JSON-RPC handshake.
+  - Reports `ONLINE` or `OFFLINE` status cleanly in the doctor subcommand output.
+  - Safely reaps child processes on completion/timeout and routes stderr to `Stdio::null` to prevent deadlocks.
+
 ## [0.2.1] - 2026-06-24
 
 ### Added
