@@ -1,0 +1,6 @@
+[build]
+# Limit the number of parallel compilation jobs to conserve RAM and CPU.
+# By default, Cargo will use all available CPU threads, which can lead to high RAM
+# usage and system freezing on resource-constrained devices.
+# You can override this via the CARGO_BUILD_JOBS environment variable or cargo --jobs/-j flag.
+jobs = 4

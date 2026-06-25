@@ -24,3 +24,12 @@ chrono = { version = "0.4", features = ["serde"] }
 semver = { version = "1", features = ["serde"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 tempfile = "3"
+
+[profile.dev]
+# Reduce debug info from full (2) to line tables only (1) to significantly
+# decrease compilation time and compiler RAM usage.
+debug = 1
+
+[profile.test]
+# Keep test profile aligned with dev profile to prevent high RAM usage during cargo test
+debug = 1
