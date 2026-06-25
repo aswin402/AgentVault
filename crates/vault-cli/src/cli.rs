@@ -578,8 +578,15 @@ pub enum CompletionShell {
 /// as standardized MCP tools. Other AI agents can connect to this process to dynamically
 /// modify their tools/skills, check status, or synchronize settings.
 #[derive(Parser, Debug)]
-#[command(after_help = "Examples:\n  vault serve             # Start stdio-based MCP server")]
-pub struct ServeArgs {}
+#[command(
+    after_help = "Examples:\n  vault serve             # Start stdio-based MCP server\n  vault serve --gateway   # Start as gateway aggregating all installed MCPs"
+)]
+pub struct ServeArgs {
+    /// Run in gateway mode: spawn all installed MCP servers and
+    /// aggregate their tools behind a single unified endpoint.
+    #[arg(long)]
+    pub gateway: bool,
+}
 
 // ─── vault ui ─────────────────────────────────────────────────────
 
