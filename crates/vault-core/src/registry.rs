@@ -21,6 +21,7 @@ pub trait Registry: Send + Sync {
     fn list_mcps(&self) -> Result<Vec<McpEntry>, VaultError>;
     fn update_mcp(&self, entry: &McpEntry) -> Result<(), VaultError>;
     fn delete_mcp(&self, name: &str) -> Result<(), VaultError>;
+    fn update_mcp_env(&self, name: &str, key: &str, value: &str) -> Result<(), VaultError>;
 
     // Skill operations
     fn insert_skill(&self, entry: &SkillEntry) -> Result<(), VaultError>;
@@ -362,6 +363,13 @@ impl Registry for SqliteRegistry {
                 name: name.to_string(),
             });
         }
+        Ok(())
+    }
+
+    fn update_mcp_env(&self, name: &str, key: &str, value: &str) -> Result<(), VaultError> {
+        let mut entry = self.get_mcp(name)?;
+        entry.env_vars.insert(key.to_string(), value.to_string());
+        self.update_mcp(&entry)?;
         Ok(())
     }
 

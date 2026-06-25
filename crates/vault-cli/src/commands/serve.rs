@@ -9,6 +9,7 @@ use vault_core::config::resolve_vault_dir;
 use vault_core::mcp::manager::{DefaultMcpManager, McpManager};
 use vault_core::mcp::models::McpSource;
 use vault_core::registry::{Registry, SqliteRegistry};
+use vault_core::search::SearchEngine;
 use vault_core::skill::manager::{DefaultSkillManager, SkillManager};
 use vault_core::skill::models::SkillSource;
 use vault_core::store::initialize_vault_directories;
@@ -125,11 +126,11 @@ async fn handle_request(
             let result = json!({
                 "protocolVersion": "2024-11-05",
                 "capabilities": {
-                    "tools": {}
+                    "tools": { "listChanged": true }
                 },
                 "serverInfo": {
                     "name": "agentvault",
-                    "version": "0.1.0"
+                    "version": env!("CARGO_PKG_VERSION")
                 }
             });
             Some(JsonRpcResponse {
@@ -173,6 +174,61 @@ async fn handle_request(
                             "name": { "type": "string", "description": "The name of the capability to remove" }
                         },
                         "required": ["name"]
+                    }
+                },
+                {
+                    "name": "update_capability",
+                    "description": "Update an installed MCP server to its latest version.",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "name": { "type": "string", "description": "The name of the MCP server to update" },
+                            "force": { "type": "boolean", "description": "Force update even if already at latest version" }
+                        },
+                        "required": ["name"]
+                    }
+                },
+                {
+                    "name": "get_capability_details",
+                    "description": "Get full metadata for a specific installed capability.",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "name": { "type": "string", "description": "The name of the capability to get details for" }
+                        },
+                        "required": ["name"]
+                    }
+                },
+                {
+                    "name": "set_capability_env",
+                    "description": "Set an environment variable on an installed MCP server.",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "name": { "type": "string", "description": "The name of the MCP server" },
+                            "key": { "type": "string", "description": "The environment variable name" },
+                            "value": { "type": "string", "description": "The environment variable value" }
+                        },
+                        "required": ["name", "key", "value"]
+                    }
+                },
+                {
+                    "name": "search_registry",
+                    "description": "Search for MCP servers available to install.",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "query": { "type": "string", "description": "Search query string" }
+                        },
+                        "required": ["query"]
+                    }
+                },
+                {
+                    "name": "doctor_check",
+                    "description": "Run diagnostic health checks on the vault.",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {}
                     }
                 }
             ]);
@@ -392,6 +448,118 @@ async fn execute_tool_call(
                     name_str
                 ))
             }
+        }
+        "update_capability" => {
+            let name_str = args
+                .get("name")
+                .and_then(|v| v.as_str())
+                .context("Missing name parameter")?;
+            let force = args.get("force").and_then(|v| v.as_bool()).unwrap_or(false);
+
+            let entry = mcp_manager.update(name_str, force).await?;
+            Ok(format!(
+                "Successfully updated '{}' to version {}",
+                entry.name, entry.version
+            ))
+        }
+        "get_capability_details" => {
+            let name_str = args
+                .get("name")
+                .and_then(|v| v.as_str())
+                .context("Missing name parameter")?;
+
+            if let Ok(entry) = registry.get_mcp(name_str) {
+                let masked_env: HashMap<&str, &str> =
+                    entry.env_vars.keys().map(|k| (k.as_str(), "***")).collect();
+                let details = json!({
+                    "type": "mcp",
+                    "name": entry.name,
+                    "version": entry.version,
+                    "source": format!("{:?}", entry.source),
+                    "status": format!("{:?}", entry.status),
+                    "env_vars": masked_env,
+                    "command": entry.command,
+                    "args": entry.args,
+                    "description": entry.description,
+                    "tags": entry.tags,
+                    "agents": entry.agents,
+                    "transport": format!("{:?}", entry.transport),
+                    "installed_at": entry.installed_at.to_rfc3339(),
+                    "updated_at": entry.updated_at.to_rfc3339()
+                });
+                Ok(serde_json::to_string_pretty(&details)?)
+            } else if let Ok(entry) = registry.get_skill(name_str) {
+                let details = json!({
+                    "type": "skill",
+                    "name": entry.name,
+                    "description": entry.description,
+                    "path": entry.path.display().to_string(),
+                    "tags": entry.tags,
+                    "source": format!("{:?}", entry.source),
+                    "agents": entry.agents,
+                    "installed_at": entry.installed_at.to_rfc3339()
+                });
+                Ok(serde_json::to_string_pretty(&details)?)
+            } else if let Ok(entry) = registry.get_workflow(name_str) {
+                let details = json!({
+                    "type": "workflow",
+                    "name": entry.name,
+                    "description": entry.description,
+                    "steps_count": entry.steps.len(),
+                    "dependencies": entry.dependencies,
+                    "installed_at": entry.installed_at.to_rfc3339()
+                });
+                Ok(serde_json::to_string_pretty(&details)?)
+            } else {
+                Err(anyhow::anyhow!(
+                    "Capability '{}' not found in vault",
+                    name_str
+                ))
+            }
+        }
+        "set_capability_env" => {
+            let name_str = args
+                .get("name")
+                .and_then(|v| v.as_str())
+                .context("Missing name parameter")?;
+            let key = args
+                .get("key")
+                .and_then(|v| v.as_str())
+                .context("Missing key parameter")?;
+            let value = args
+                .get("value")
+                .and_then(|v| v.as_str())
+                .context("Missing value parameter")?;
+
+            registry.update_mcp_env(name_str, key, value)?;
+            Ok(format!(
+                "Successfully set env var '{}' on '{}'",
+                key, name_str
+            ))
+        }
+        "search_registry" => {
+            let query = args
+                .get("query")
+                .and_then(|v| v.as_str())
+                .context("Missing query parameter")?;
+
+            let search_engine = SearchEngine::new(registry.clone());
+            let results = search_engine.search_npm(query).await?;
+            Ok(serde_json::to_string_pretty(&results)?)
+        }
+        "doctor_check" => {
+            let mcps = registry.list_mcps()?;
+            let skills = registry.list_skills()?;
+            let workflows = registry.list_workflows()?;
+
+            let report = json!({
+                "vault_version": env!("CARGO_PKG_VERSION"),
+                "installed_mcps": mcps.len(),
+                "installed_skills": skills.len(),
+                "installed_workflows": workflows.len(),
+                "status": "healthy"
+            });
+            Ok(serde_json::to_string_pretty(&report)?)
         }
         _ => Err(anyhow::anyhow!("Tool not found: {}", name)),
     }
