@@ -185,27 +185,48 @@ impl ChildMcpServer {
             stdin.flush().await.context("Failed to flush child stdin")?;
         }
 
-        let mut line = String::new();
-        {
-            let mut stdout = self.stdout.lock().await;
-            stdout
-                .read_line(&mut line)
-                .await
-                .context("Failed to read from child stdout")?;
+        loop {
+            let mut line = String::new();
+            {
+                let mut stdout = self.stdout.lock().await;
+                stdout
+                    .read_line(&mut line)
+                    .await
+                    .context("Failed to read from child stdout")?;
+            }
+
+            if line.is_empty() {
+                anyhow::bail!("Child server '{}' closed stdout connection", self.name);
+            }
+
+            let response: Value =
+                serde_json::from_str(&line).context("Failed to parse JSON-RPC response")?;
+
+            let is_response = response.get("method").is_none();
+            if is_response {
+                if let Some(resp_id) = response.get("id") {
+                    if resp_id.as_u64() == Some(id) {
+                        if let Some(error) = response.get("error") {
+                            let message = error
+                                .get("message")
+                                .and_then(|m| m.as_str())
+                                .unwrap_or("Unknown error");
+                            anyhow::bail!("JSON-RPC error: {message}");
+                        }
+                        return Ok(response.get("result").cloned().unwrap_or(Value::Null));
+                    } else {
+                        eprintln!(
+                            "[gateway] Ignored JSON-RPC response with mismatched ID (expected {id}, got {resp_id:?})"
+                        );
+                    }
+                }
+            } else {
+                eprintln!(
+                    "[gateway] Received notification/request from '{}': {}",
+                    self.name, response
+                );
+            }
         }
-
-        let response: Value =
-            serde_json::from_str(&line).context("Failed to parse JSON-RPC response")?;
-
-        if let Some(error) = response.get("error") {
-            let message = error
-                .get("message")
-                .and_then(|m| m.as_str())
-                .unwrap_or("Unknown error");
-            anyhow::bail!("JSON-RPC error: {message}");
-        }
-
-        Ok(response.get("result").cloned().unwrap_or(Value::Null))
     }
 
     /// Send a JSON-RPC notification to the child (fire-and-forget, no response).
