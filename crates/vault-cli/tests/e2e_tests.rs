@@ -370,4 +370,3 @@ fn test_e2e_doctor() {
     assert!(stdout.contains("Checking installed MCP servers:"));
     assert!(stdout.contains("No installed MCP servers found."));
 }
-

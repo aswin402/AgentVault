@@ -2,6 +2,7 @@ pub mod agent;
 pub mod capability;
 pub mod config;
 pub mod error;
+pub mod gateway;
 pub mod manifest;
 pub mod mcp;
 pub mod registry;
