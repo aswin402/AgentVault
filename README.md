@@ -139,6 +139,7 @@ When running `vault serve --gateway`, AgentVault acts as a unified MCP-to-MCP pr
 | `vault sync <agent>` | Sync configurations to agent connector |
 | `vault serve` | Run as stdio MCP server |
 | `vault serve --gateway` | Run as MCP gateway aggregator |
+| `vault watch` | Watch agent configs and auto-sync on change |
 | `vault status` | Show health, paths, and sync history |
 | `vault config` | View/modify configuration |
 | `vault doctor` | Run diagnostics and health checks |

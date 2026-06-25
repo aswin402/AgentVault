@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-06-25
+
+### Added
+
+- **New Documentation & Project Standards**:
+  - `CONTRIBUTING.md` — Setup, compilation, testing, linting, formatting, and PR submission guide.
+  - `CODE_OF_CONDUCT.md` — Contributor Covenant v2.1.
+  - `docs/CLI.md` — Comprehensive command-line documentation for all 17 subcommands of `vault`.
+- **Animated SVG Logo** version label updated to v0.2.4.
+
 ## [0.2.3] - 2026-06-25
 
 ### Added

@@ -1,18 +1,23 @@
-name: Rust CI
+name: CI
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main]
   pull_request:
-    branches: [ main, master ]
+    branches: [main]
 
 env:
   CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
 
 jobs:
   check:
-    name: Rust Check
-    runs-on: ubuntu-latest
+    name: Check (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
       - name: Install stable toolchain
@@ -27,3 +32,7 @@ jobs:
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Run tests
         run: cargo test --workspace --all-targets
+      - name: Build release
+        run: cargo build --release
+      - name: Verify binary runs
+        run: target/release/vault --version
