@@ -10,10 +10,12 @@ pub async fn ping_mcp_server(mcp: &McpEntry, handshake_timeout: Duration) -> Res
     cmd.args(&mcp.args);
     cmd.envs(&mcp.env_vars);
     cmd.stdin(Stdio::piped())
-       .stdout(Stdio::piped())
-       .stderr(Stdio::piped());
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null());
 
-    let mut child = cmd.spawn().map_err(|e| format!("Failed to spawn process: {}", e))?;
+    let mut child = cmd
+        .spawn()
+        .map_err(|e| format!("Failed to spawn process: {}", e))?;
 
     let mut stdin = child.stdin.take().ok_or("Failed to open stdin")?;
     let stdout = child.stdout.take().ok_or("Failed to open stdout")?;
@@ -34,15 +36,27 @@ pub async fn ping_mcp_server(mcp: &McpEntry, handshake_timeout: Duration) -> Res
         }
     });
 
-    let req_str = serde_json::to_string(&req).map_err(|e| format!("Serialization error: {}", e))? + "\n";
+    let req_str =
+        serde_json::to_string(&req).map_err(|e| format!("Serialization error: {}", e))? + "\n";
 
     // Write request and wait for response
     let handshake_fut = async {
-        stdin.write_all(req_str.as_bytes()).await.map_err(|e| format!("Write error: {}", e))?;
-        stdin.flush().await.map_err(|e| format!("Flush error: {}", e))?;
+        stdin
+            .write_all(req_str.as_bytes())
+            .await
+            .map_err(|e| format!("Write error: {}", e))?;
+        stdin
+            .flush()
+            .await
+            .map_err(|e| format!("Flush error: {}", e))?;
 
-        if let Some(line) = reader.next_line().await.map_err(|e| format!("Read error: {}", e))? {
-            let res: serde_json::Value = serde_json::from_str(&line).map_err(|e| format!("JSON parse error ({}): {}", line, e))?;
+        if let Some(line) = reader
+            .next_line()
+            .await
+            .map_err(|e| format!("Read error: {}", e))?
+        {
+            let res: serde_json::Value = serde_json::from_str(&line)
+                .map_err(|e| format!("JSON parse error ({}): {}", line, e))?;
             if res.get("error").is_some() {
                 return Err(format!("Server returned error: {:?}", res.get("error")));
             }
@@ -57,8 +71,9 @@ pub async fn ping_mcp_server(mcp: &McpEntry, handshake_timeout: Duration) -> Res
 
     let res = timeout(handshake_timeout, handshake_fut).await;
 
-    // Force terminate child
+    // Force terminate child and reap it
     let _ = child.kill().await;
+    let _ = child.wait().await;
 
     match res {
         Ok(Ok(())) => Ok(()),
@@ -70,7 +85,7 @@ pub async fn ping_mcp_server(mcp: &McpEntry, handshake_timeout: Duration) -> Res
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::mcp::models::{McpEntry, McpSource, McpTransport, McpStatus};
+    use crate::mcp::models::{McpEntry, McpSource, McpStatus, McpTransport};
     use std::collections::HashMap;
     use std::time::Duration;
 
@@ -81,10 +96,15 @@ mod tests {
             name: "mock".to_string(),
             display_name: None,
             version: "1.0.0".to_string(),
-            source: McpSource::Local { path: std::path::PathBuf::new() },
+            source: McpSource::Local {
+                path: std::path::PathBuf::new(),
+            },
             install_path: std::path::PathBuf::new(),
             command: "sh".to_string(),
-            args: vec!["-c".to_string(), "read line; echo '{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{}}'".to_string()],
+            args: vec![
+                "-c".to_string(),
+                "read line; echo '{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{}}'".to_string(),
+            ],
             env_vars: HashMap::new(),
             transport: McpTransport::Stdio,
             status: McpStatus::Active,
@@ -107,7 +127,9 @@ mod tests {
             name: "mock".to_string(),
             display_name: None,
             version: "1.0.0".to_string(),
-            source: McpSource::Local { path: std::path::PathBuf::new() },
+            source: McpSource::Local {
+                path: std::path::PathBuf::new(),
+            },
             install_path: std::path::PathBuf::new(),
             command: "sleep".to_string(),
             args: vec!["10".to_string()],
