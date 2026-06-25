@@ -1,7 +1,9 @@
 use crate::cli::DoctorArgs;
 use anyhow::Result;
 use owo_colors::OwoColorize;
+use std::time::Duration;
 use vault_core::config::{resolve_vault_dir, VaultConfig};
+use vault_core::mcp::health::ping_mcp_server;
 use vault_core::registry::{Registry, SqliteRegistry};
 use vault_core::store::initialize_vault_directories;
 
@@ -170,6 +172,30 @@ pub async fn handle(args: DoctorArgs, vault_dir_override: Option<&str>) -> Resul
                         );
                         if !path_exists {
                             clean = false;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 4.5. Check MCP server responsiveness
+    if args.check_mcps && db_path.exists() {
+        if let Ok(registry) = SqliteRegistry::new(&db_path) {
+            if let Ok(mcps) = registry.list_mcps() {
+                println!();
+                println!("{}", "Checking installed MCP servers:".bold().green());
+                if mcps.is_empty() {
+                    println!("  No installed MCP servers found.");
+                } else {
+                    for mcp in mcps {
+                        print!("  • {:<20} ... ", mcp.name.bold());
+                        match ping_mcp_server(&mcp, Duration::from_secs(5)).await {
+                            Ok(()) => println!("{}", "ONLINE".green()),
+                            Err(e) => {
+                                println!("{} ({})", "OFFLINE".red(), e);
+                                clean = false;
+                            }
                         }
                     }
                 }

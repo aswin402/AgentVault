@@ -319,3 +319,55 @@ fn test_e2e_serve_mcp() {
     let _ = child.kill();
     let _ = child.wait();
 }
+
+#[test]
+fn test_e2e_doctor() {
+    let bin = get_bin_path();
+    let temp_vault = tempdir().unwrap();
+    let vault_dir = temp_vault.path().to_path_buf();
+
+    // 1. Run doctor on uninitialized vault (should fail config / db check)
+    let output = Command::new(&bin)
+        .arg("--vault-dir")
+        .arg(&vault_dir)
+        .arg("doctor")
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("FAILED"));
+
+    // 2. Init vault
+    Command::new(&bin)
+        .arg("--vault-dir")
+        .arg(&vault_dir)
+        .arg("init")
+        .output()
+        .unwrap();
+
+    // 3. Run doctor on initialized empty vault (should pass)
+    let output = Command::new(&bin)
+        .arg("--vault-dir")
+        .arg(&vault_dir)
+        .arg("doctor")
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Checking directory structure..."));
+    assert!(stdout.contains("OK"));
+
+    // 4. Run doctor --check-mcps on initialized empty vault
+    let output = Command::new(&bin)
+        .arg("--vault-dir")
+        .arg(&vault_dir)
+        .arg("doctor")
+        .arg("--check-mcps")
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Checking installed MCP servers:"));
+    assert!(stdout.contains("No installed MCP servers found."));
+}
+
