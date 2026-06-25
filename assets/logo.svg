@@ -1,211 +1,155 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="100%" height="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 200" width="600" height="200">
   <defs>
-    <!-- Neon Gradients -->
-    <linearGradient id="neonCyan" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00f3ff" />
-      <stop offset="100%" stop-color="#0066ff" />
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d1117"/>
+      <stop offset="50%" style="stop-color:#161b22"/>
+      <stop offset="100%" style="stop-color:#0d1117"/>
     </linearGradient>
-    
-    <linearGradient id="neonPurple" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ff00cc" />
-      <stop offset="100%" stop-color="#9900ff" />
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#58a6ff"/>
+      <stop offset="50%" style="stop-color:#7c3aed"/>
+      <stop offset="100%" style="stop-color:#06b6d4"/>
     </linearGradient>
-
-    <linearGradient id="cyanPurple" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00f3ff" />
-      <stop offset="50%" stop-color="#ab00ff" />
-      <stop offset="100%" stop-color="#ff00cc" />
+    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#58a6ff;stop-opacity:0.4"/>
+      <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:0.1"/>
     </linearGradient>
-
-    <!-- Glow Filters -->
-    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="8" result="blur" />
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#e6edf3"/>
+      <stop offset="100%" style="stop-color:#c9d1d9"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
       <feMerge>
-        <feMergeNode in="blur" />
-        <feMergeNode in="SourceGraphic" />
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
-
-    <filter id="glow-intense" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="15" result="blur1" />
-      <feGaussianBlur stdDeviation="5" result="blur2" />
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
       <feMerge>
-        <feMergeNode in="blur1" />
-        <feMergeNode in="blur2" />
-        <feMergeNode in="SourceGraphic" />
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
   </defs>
 
-  <style>
-    /* Isometric Box Style */
-    .box-edge {
-      stroke: url(#cyanPurple);
-      stroke-width: 3.5;
-      fill: none;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      filter: url(#glow);
-      opacity: 0.9;
-    }
-    
-    .box-back {
-      stroke: url(#neonPurple);
-      stroke-dasharray: 6 6;
-      opacity: 0.4;
-      stroke-width: 2;
-    }
-    
-    /* Circuits */
-    .circuit-line {
-      fill: none;
-      stroke-width: 3;
-      stroke-linecap: round;
-      filter: url(#glow);
-      stroke-dasharray: 300;
-      stroke-dashoffset: 300;
-      animation: drawCircuit 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-    }
+  <!-- Background -->
+  <rect width="600" height="200" rx="16" fill="url(#bgGrad)"/>
 
-    .cyan-line {
-      stroke: url(#neonCyan);
-    }
-
-    .purple-line {
-      stroke: url(#neonPurple);
-    }
-    
-    /* Glowing Dots */
-    .glow-dot {
-      fill: #fff;
-      filter: url(#glow-intense);
-      opacity: 0;
-      animation: pulseDot 4s ease-in-out infinite;
-    }
-    
-    /* Particles */
-    .particle {
-      fill: #00f3ff;
-      filter: url(#glow);
-      opacity: 0;
-      animation: floatUp 5s ease-in-out infinite;
-    }
-
-    /* Keyframes */
-    @keyframes drawCircuit {
-      0% {
-        stroke-dashoffset: 300;
-      }
-      50% {
-        stroke-dashoffset: 0;
-      }
-      100% {
-        stroke-dashoffset: -300;
-      }
-    }
-
-    @keyframes pulseDot {
-      0%, 100% {
-        opacity: 0;
-        transform: scale(0.3);
-      }
-      30%, 70% {
-        opacity: 1;
-        transform: scale(1.1);
-      }
-    }
-
-    @keyframes floatUp {
-      0% {
-        transform: translate(0, 0) scale(0.8);
-        opacity: 0;
-      }
-      20% {
-        opacity: 0.8;
-      }
-      80% {
-        opacity: 0.8;
-      }
-      100% {
-        transform: translate(var(--tx), var(--ty)) scale(0.3);
-        opacity: 0;
-      }
-    }
-    
-    /* Typography */
-    .text-title {
-      font-family: 'Outfit', 'Montserrat', 'Inter', sans-serif;
-      font-size: 76px;
-      font-weight: 800;
-      fill: url(#cyanPurple);
-      letter-spacing: 5px;
-      filter: url(#glow);
-    }
-
-    .text-subtitle {
-      font-family: 'Inter', sans-serif;
-      font-size: 18px;
-      font-weight: 600;
-      fill: #94a3b8;
-      letter-spacing: 7px;
-      opacity: 0.8;
-    }
-  </style>
-
-  <g transform="translate(400, 360)">
-    <!-- Circuit Lines (Emerging from the Box) -->
-    <!-- Center Left -->
-    <path class="circuit-line cyan-line" d="M 0, -5 L -40, -65 L -120, -65 L -150, -115" style="animation-delay: 0s;" />
-    <!-- Center Right -->
-    <path class="circuit-line purple-line" d="M 0, -5 L 40, -65 L 120, -65 L 150, -115" style="animation-delay: 0.5s;" />
-    <!-- Mid Left Up -->
-    <path class="circuit-line purple-line" d="M -20, 15 L -80, -45 L -80, -125 L -130, -175" style="animation-delay: 1s;" />
-    <!-- Mid Right Up -->
-    <path class="circuit-line cyan-line" d="M 20, 15 L 80, -45 L 80, -125 L 130, -175" style="animation-delay: 1.5s;" />
-    <!-- Center Straight Up -->
-    <path class="circuit-line cyan-line" d="M 0, -10 L 0, -155 L -30, -205" style="animation-delay: 0.8s;" />
-    <path class="circuit-line purple-line" d="M 0, -10 L 0, -125 L 30, -175" style="animation-delay: 1.2s;" />
-
-    <!-- Glowing Dots at endpoints -->
-    <circle class="glow-dot" cx="-150" cy="-115" r="6" style="animation-delay: 2.0s; fill: #00f3ff;" />
-    <circle class="glow-dot" cx="150" cy="-115" r="6" style="animation-delay: 2.5s; fill: #ff00cc;" />
-    <circle class="glow-dot" cx="-130" cy="-175" r="6" style="animation-delay: 3.0s; fill: #ff00cc;" />
-    <circle class="glow-dot" cx="130" cy="-175" r="6" style="animation-delay: 3.5s; fill: #00f3ff;" />
-    <circle class="glow-dot" cx="-30" cy="-205" r="5" style="animation-delay: 2.8s; fill: #00f3ff;" />
-    <circle class="glow-dot" cx="30" cy="-175" r="5" style="animation-delay: 3.2s; fill: #ff00cc;" />
-
-    <!-- Floating Particles -->
-    <circle class="particle" cx="-20" cy="-50" r="3.5" style="--tx: -60px; --ty: -150px; animation-delay: 0s;" />
-    <circle class="particle" cx="30" cy="-30" r="2.5" style="--tx: 90px; --ty: -180px; animation-delay: 1.2s; fill: #ff00cc;" />
-    <circle class="particle" cx="-10" cy="-70" r="3" style="--tx: -40px; --ty: -200px; animation-delay: 2.4s;" />
-    <circle class="particle" cx="15" cy="-60" r="3.5" style="--tx: 50px; --ty: -130px; animation-delay: 3.6s; fill: #ff00cc;" />
-
-    <!-- Isometric Box (Package) -->
-    <!-- Back wireframe (inside the box) -->
-    <path class="box-edge box-back" d="M 0, -30 L 0, 60 M -90, 110 L 0, 60 L 90, 110" />
-    
-    <!-- Front Face Left -->
-    <path class="box-edge" d="M -90, 20 L -90, 110 L 0, 160 M 0, 160 L 0, 70" />
-    <!-- Front Face Right -->
-    <path class="box-edge" d="M 90, 20 L 90, 110 L 0, 160" />
-    <!-- Top Rim (Opening) -->
-    <path class="box-edge" d="M -90, 20 L 0, 70 L 90, 20 L 0, -30 Z" />
-
-    <!-- Left-Back Flap -->
-    <path class="box-edge" d="M -90, 20 L -140, -10 L -50, -60 L 0, -30" />
-    <!-- Right-Back Flap -->
-    <path class="box-edge" d="M 90, 20 L 140, -10 L 50, -60 L 0, -30" />
-    <!-- Front-Left Flap -->
-    <path class="box-edge" d="M -90, 20 L -140, 50 L -50, 100 L 0, 70" />
-    <!-- Front-Right Flap -->
-    <path class="box-edge" d="M 90, 20 L 140, 50 L 50, 100 L 0, 70" />
+  <!-- Subtle grid pattern -->
+  <g opacity="0.03">
+    <line x1="0" y1="40" x2="600" y2="40" stroke="#58a6ff" stroke-width="0.5"/>
+    <line x1="0" y1="80" x2="600" y2="80" stroke="#58a6ff" stroke-width="0.5"/>
+    <line x1="0" y1="120" x2="600" y2="120" stroke="#58a6ff" stroke-width="0.5"/>
+    <line x1="0" y1="160" x2="600" y2="160" stroke="#58a6ff" stroke-width="0.5"/>
+    <line x1="100" y1="0" x2="100" y2="200" stroke="#58a6ff" stroke-width="0.5"/>
+    <line x1="200" y1="0" x2="200" y2="200" stroke="#58a6ff" stroke-width="0.5"/>
+    <line x1="300" y1="0" x2="300" y2="200" stroke="#58a6ff" stroke-width="0.5"/>
+    <line x1="400" y1="0" x2="400" y2="200" stroke="#58a6ff" stroke-width="0.5"/>
+    <line x1="500" y1="0" x2="500" y2="200" stroke="#58a6ff" stroke-width="0.5"/>
   </g>
 
-  <!-- Text Branding -->
-  <g transform="translate(400, 610)" text-anchor="middle">
-    <!-- Stylized "onpkg" text -->
-    <text class="text-title" x="0" y="0">onpkg</text>
-    <!-- Subtitle -->
-    <text class="text-subtitle" x="0" y="45">AI AGENT PACKAGE MANAGER</text>
+  <!-- Animated glow behind shield -->
+  <circle cx="100" cy="100" r="55" fill="url(#glowGrad)" filter="url(#softGlow)">
+    <animate attributeName="r" values="50;58;50" dur="3s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- Rotating gear ring -->
+  <g filter="url(#glow)">
+    <g opacity="0.3">
+      <animateTransform attributeName="transform" type="rotate" from="0 100 100" to="360 100 100" dur="20s" repeatCount="indefinite"/>
+      <rect x="97" y="52" width="6" height="10" rx="2" fill="#58a6ff"/>
+      <rect x="97" y="138" width="6" height="10" rx="2" fill="#58a6ff"/>
+      <rect x="52" y="97" width="10" height="6" rx="2" fill="#58a6ff"/>
+      <rect x="138" y="97" width="10" height="6" rx="2" fill="#58a6ff"/>
+      <rect x="130" y="66" width="6" height="10" rx="2" fill="#58a6ff" transform="rotate(45 133 71)"/>
+      <rect x="64" y="124" width="6" height="10" rx="2" fill="#58a6ff" transform="rotate(45 67 129)"/>
+      <rect x="124" y="127" width="10" height="6" rx="2" fill="#58a6ff" transform="rotate(45 129 130)"/>
+      <rect x="66" y="64" width="10" height="6" rx="2" fill="#58a6ff" transform="rotate(45 71 67)"/>
+      <circle cx="100" cy="100" r="42" fill="none" stroke="#58a6ff" stroke-width="1.5" stroke-dasharray="8 4"/>
+    </g>
   </g>
+
+  <!-- Shield shape -->
+  <g filter="url(#glow)">
+    <path d="M100 55 L130 68 L130 105 Q130 130 100 145 Q70 130 70 105 L70 68 Z"
+          fill="none" stroke="url(#shieldGrad)" stroke-width="2.5" stroke-linejoin="round">
+      <animate attributeName="stroke-width" values="2.5;3;2.5" dur="2s" repeatCount="indefinite"/>
+    </path>
+  </g>
+
+  <!-- Vault keyhole -->
+  <g>
+    <circle cx="100" cy="92" r="8" fill="none" stroke="#58a6ff" stroke-width="2">
+      <animate attributeName="stroke" values="#58a6ff;#7c3aed;#06b6d4;#58a6ff" dur="4s" repeatCount="indefinite"/>
+    </circle>
+    <rect x="97" y="98" width="6" height="14" rx="3" fill="#58a6ff">
+      <animate attributeName="fill" values="#58a6ff;#7c3aed;#06b6d4;#58a6ff" dur="4s" repeatCount="indefinite"/>
+    </rect>
+    <circle cx="97" cy="89" r="2" fill="#fff" opacity="0.4">
+      <animate attributeName="opacity" values="0.2;0.6;0.2" dur="2s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- Title: AgentVault -->
+  <text x="170" y="95" font-family="'Segoe UI', 'SF Pro Display', system-ui, -apple-system, sans-serif"
+        font-size="42" font-weight="700" fill="url(#textGrad)" letter-spacing="-1">
+    Agent<tspan fill="#58a6ff">Vault</tspan>
+  </text>
+
+  <!-- Tagline -->
+  <text x="172" y="125" font-family="'Segoe UI', 'SF Pro Display', system-ui, -apple-system, sans-serif"
+        font-size="14" fill="#8b949e" letter-spacing="0.5">
+    Unified AI Agent Capability Management
+  </text>
+
+  <!-- Animated data flow dots -->
+  <g opacity="0.5">
+    <circle r="2" fill="#58a6ff">
+      <animate attributeName="cx" values="170;540" dur="4s" repeatCount="indefinite"/>
+      <animate attributeName="cy" values="100;100" dur="4s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0;1;0" dur="4s" repeatCount="indefinite"/>
+    </circle>
+    <circle r="1.5" fill="#7c3aed">
+      <animate attributeName="cx" values="170;540" dur="4s" begin="1.3s" repeatCount="indefinite"/>
+      <animate attributeName="cy" values="100;100" dur="4s" begin="1.3s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0;1;0" dur="4s" begin="1.3s" repeatCount="indefinite"/>
+    </circle>
+    <circle r="1.5" fill="#06b6d4">
+      <animate attributeName="cx" values="170;540" dur="4s" begin="2.6s" repeatCount="indefinite"/>
+      <animate attributeName="cy" values="100;100" dur="4s" begin="2.6s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0;1;0" dur="4s" begin="2.6s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- Version badge -->
+  <g>
+    <rect x="472" y="72" width="80" height="24" rx="12" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+    <text x="512" y="89" font-family="'SF Mono', 'Fira Code', monospace" font-size="12"
+          fill="#58a6ff" text-anchor="middle" font-weight="600">v0.2.3</text>
+  </g>
+
+  <!-- Bottom accent line -->
+  <rect x="30" y="180" height="2" rx="1" fill="url(#shieldGrad)">
+    <animate attributeName="width" values="0;540;0" dur="6s" repeatCount="indefinite"/>
+  </rect>
+
+  <!-- Floating particles -->
+  <circle cx="200" cy="40" r="1" fill="#58a6ff" opacity="0.3">
+    <animate attributeName="cy" values="40;30;40" dur="5s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.3;0.7;0.3" dur="5s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="350" cy="170" r="1" fill="#7c3aed" opacity="0.3">
+    <animate attributeName="cy" values="170;160;170" dur="4s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.2;0.6;0.2" dur="4s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="480" cy="50" r="1.5" fill="#06b6d4" opacity="0.2">
+    <animate attributeName="cy" values="50;38;50" dur="6s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.2;0.5;0.2" dur="6s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="550" cy="150" r="1" fill="#58a6ff" opacity="0.2">
+    <animate attributeName="cy" values="150;140;150" dur="3.5s" repeatCount="indefinite"/>
+  </circle>
 </svg>

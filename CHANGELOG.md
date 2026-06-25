@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-06-25
+
+### Added
+
+- **MCP Gateway Mode (`vault serve --gateway`)**: A unified aggregation gateway that spawns all installed Active/Stdio MCP servers as child processes, performs JSON-RPC initialize handshakes, and merges their tools behind a single endpoint.
+  - Namespaced tool routing (`server__tool`) prevents tool name collisions across child servers.
+  - Per-child `Mutex`-serialized stdio I/O prevents JSON-RPC interleave corruption under concurrent access.
+  - Dynamic child lifecycle: newly installed MCPs are auto-spawned, removed MCPs are auto-shutdown, updated MCPs are restarted seamlessly.
+  - `notifications/tools/list_changed` sent to clients on install/remove/update events.
+  - Graceful shutdown of all child servers on stdin EOF.
+- **Expanded Management Tools (8 total, up from 3)**:
+  - `update_capability` — Update installed MCP servers to latest version.
+  - `get_capability_details` — Full metadata with masked environment variable values.
+  - `set_capability_env` — Set/update environment variables on installed MCP servers.
+  - `search_registry` — Expose npm search to AI agents for discoverability.
+  - `doctor_check` — Diagnostic health summary with gateway status.
+- **Gateway Core Engine** (`vault-core::gateway`):
+  - `ChildMcpServer` — Manages child process lifecycle, stdio pipes, and JSON-RPC request/response correlation via `AtomicU64` request IDs.
+  - `GatewayRegistry` — Central router using `Arc<RwLock<HashMap>>` with collision detection and namespaced tool aggregation.
+- **Animated SVG Logo** — New dark-themed animated logo with shield, rotating gear ring, flowing data particles, and gradient accents.
+
+### Changed
+
+- `vault serve` now identifies itself as `agentvault-gateway` when `--gateway` is active, and `agentvault` otherwise.
+- `list_capabilities` and `doctor_check` now include `gateway_active_servers` field when running in gateway mode.
+
 ## [0.2.2] - 2026-06-25
 
 ### Added
@@ -151,7 +177,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/aswin402/AgentVault/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/aswin402/AgentVault/compare/v0.2.3...HEAD
+[0.2.3]: https://github.com/aswin402/AgentVault/compare/v0.2.2...v0.2.3
+[0.2.2]: https://github.com/aswin402/AgentVault/compare/v0.2.1...v0.2.2
+[0.2.1]: https://github.com/aswin402/AgentVault/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/aswin402/AgentVault/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/aswin402/AgentVault/compare/v0.0.2...v0.1.0
 [0.0.2]: https://github.com/aswin402/AgentVault/compare/v0.0.1...v0.0.2

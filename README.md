@@ -1,171 +1,196 @@
-# AgentVault 🛡️
+<p align="center">
+  <img src="assets/logo.svg" alt="AgentVault Logo" width="600"/>
+</p>
 
-> **Central local capability management layer for AI agents.**
-> **Install once. Use everywhere.**
+<p align="center">
+  <a href="https://github.com/aswin402/AgentVault/actions"><img src="https://img.shields.io/github/actions/workflow/status/aswin402/AgentVault/ci.yml?style=flat-square&logo=github&label=CI" alt="CI"></a>
+  <a href="https://github.com/aswin402/AgentVault/releases"><img src="https://img.shields.io/github/v/release/aswin402/AgentVault?style=flat-square&color=58a6ff" alt="Release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-7c3aed?style=flat-square" alt="License"></a>
+  <a href="https://github.com/aswin402/AgentVault/stargazers"><img src="https://img.shields.io/github/stars/aswin402/AgentVault?style=flat-square&color=06b6d4" alt="Stars"></a>
+</p>
 
-AgentVault acts as a centralized local capability registry that all your AI coding agents (Claude Code, Gemini CLI, OpenCode, Codex CLI, Cursor, etc.) can access. Instead of installing, configuring, and updating Model Context Protocol (MCP) servers, skills, and workflows separately for every agent, AgentVault manages them in one central repository and synchronizes their configurations dynamically.
-
----
-
-## 🚀 Key Features
-
-* **Unified Storage**: Centralized directory structure (`~/.agentvault/`) for all capability binaries, configuration templates, and settings.
-* **SQLite Registry (WAL Mode)**: Relational tracking of MCPs, skills, workflows, agent connector paths, and execution sync histories.
-* **Smart Connectors**: Native, secure adapters to read/write capability configurations for **Claude Code**, **Gemini CLI**, **OpenCode**, and **Codex CLI**.
-* **Safety Defaults**: Automatic, encrypted/structured backups before any synchronization is executed.
-* **Skills Management**: Register prompt directories containing a `SKILL.md` (with YAML frontmatter) from local paths or git clone sources.
-* **Workflow Runner**: Parse and validate multi-step execution graphs defined in `workflow.toml` using Kahn's topological sorting algorithm (with cycle detection and unresolved capability checks).
-* **Parallel CLI Updates**: Runs check for all update operations concurrently utilizing Tokio-spawned tasks.
-* **Error suggestion contexts**: Human-friendly suggetions mapped dynamically at the CLI boundary, print the complete cause chain with `--verbose`.
-* **Shell Autocompletions & Man Pages**: Autocompletions for Bash, Zsh, Fish, and PowerShell, and man pages generated automatically during compile time.
+<p align="center">
+  <b>Install once. Use everywhere.</b><br/>
+  Unified local capability management for all your AI coding agents.
+</p>
 
 ---
 
-## 📂 Directory Layout
+## What is AgentVault?
 
-AgentVault maintains a clean directory structure under the user's home folder:
+AgentVault is a centralized local capability registry that all your AI coding agents — Claude Code, Gemini CLI, OpenCode, Codex CLI, Cursor, and more — connect to. Instead of installing, configuring, and updating MCP servers, skills, and workflows separately for each agent, AgentVault manages them in **one place** and synchronizes configurations dynamically.
 
-```text
-~/.agentvault/
-├── config.toml         # Central configurations (logs, paths, secrets filtering)
-├── vault.db            # SQLite database registry (WAL mode)
-├── mcps/               # Centralized node/python environments for MCP servers
-├── skills/             # Registered capability skills and prompt templates
-├── workflows/          # Workflows and task runners
-├── backups/            # Pre-synchronization agent configuration backups
-└── logs/               # Detailed operation and sync execution logs
+### The Problem
+
+```
+Agent A → installs filesystem-mcp → configures env → updates manually
+Agent B → installs filesystem-mcp → configures env → updates manually  ← duplicated work
+Agent C → installs filesystem-mcp → configures env → updates manually  ← 3x the effort
+```
+
+### The Solution
+
+```
+AgentVault → installs once → syncs to all agents → updates once → done
 ```
 
 ---
 
-## 🛠️ Installation
+## ✨ Key Features
+
+| Feature | Description |
+|---------|-------------|
+| 🛡️ **Unified Storage** | Centralized `~/.agentvault/` directory for all capability binaries, configs, and settings |
+| 🌐 **MCP Gateway** | `vault serve --gateway` — aggregate all MCP servers behind a single endpoint |
+| 🔌 **Smart Connectors** | Native adapters for Claude Code, Gemini CLI, OpenCode, and Codex CLI |
+| 📦 **Multi-Source Install** | Install from npm, PyPI, GitHub, or local paths |
+| 🧠 **Skills & Workflows** | Register prompt directories and multi-step execution graphs |
+| 🔒 **Safety Defaults** | Automatic backups before any sync operation |
+| 🖥️ **TUI Dashboard** | Interactive terminal UI with themes (slate, nord, dracula, monokai) |
+| 🩺 **Health Checks** | `vault doctor --check-mcps` verifies MCP server responsiveness |
+| 🐚 **Shell Completions** | Bash, Zsh, Fish, and PowerShell autocompletions + man pages |
+
+---
+
+## 🚀 Quick Start
+
+### Install
 
 ```bash
-# Install the latest stable version
-curl -fsSL https://raw.githubusercontent.com/aswin402/AgentVault/main/install.sh | bash
-```
-
-Alternatively, you can compile from source:
-```bash
+# From source
 git clone https://github.com/aswin402/AgentVault.git
 cd AgentVault
 cargo build --release
 cp target/release/vault ~/.local/bin/
 ```
 
+### Initialize
+
+```bash
+vault init
+```
+
+### Install an MCP Server
+
+```bash
+# From npm
+vault install npm:@anthropic/mcp-filesystem --args '/home/user/projects'
+
+# From PyPI
+vault install pypi:mcp-server-memory
+
+# From GitHub
+vault install github:anthropics/mcp-server-brave-search
+```
+
+### Sync to Your Agent
+
+```bash
+vault sync claude      # Sync to Claude Code
+vault sync gemini      # Sync to Gemini CLI
+vault sync --all       # Sync to all connected agents
+```
+
+### Run as MCP Gateway
+
+```bash
+# Spawn all installed MCPs behind a single unified endpoint
+vault serve --gateway
+```
+
+---
+
+## 🌐 Gateway Architecture
+
+When running `vault serve --gateway`, AgentVault acts as a unified MCP-to-MCP proxy:
+
+```
+┌──────────────┐    stdio     ┌───────────────────────┐
+│   AI Agent   │◄────────────►│  vault serve          │
+│ (Claude/etc) │              │  --gateway            │
+└──────────────┘              └──────┬────────────────┘
+                                     │ spawns & manages
+                    ┌────────────────┼──────────────────┐
+                    │                │                   │
+              ┌─────▼──────┐  ┌──────▼───────┐  ┌───────▼───────┐
+              │ brave-mcp   │  │ filesystem   │  │ memory-mcp    │
+              │ (child)     │  │ (child)      │  │ (child)       │
+              └────────────┘  └──────────────┘  └───────────────┘
+```
+
+**Key behaviors:**
+- Tools are namespaced as `server__tool` to prevent collisions
+- Per-child Mutex-serialized I/O prevents JSON corruption
+- Install/remove/update automatically spawns/shuts down children
+- `notifications/tools/list_changed` sent on any change
+
 ---
 
 ## 📖 Command Reference
 
-### `vault init`
-Initialize a new vault workspace directory. Generates the default configuration file and SQLite registry database.
-```bash
-vault init [--force] [--dir <custom_path>]
-```
+| Command | Description |
+|---------|-------------|
+| `vault init` | Initialize vault workspace directory |
+| `vault install <source>` | Install MCP server, skill, or workflow |
+| `vault remove <name>` | Remove installed capability |
+| `vault update [name]` | Update to latest version |
+| `vault list` | List all installed capabilities |
+| `vault search <query>` | Fuzzy search local + npm registry |
+| `vault sync <agent>` | Sync configurations to agent connector |
+| `vault serve` | Run as stdio MCP server |
+| `vault serve --gateway` | Run as MCP gateway aggregator |
+| `vault status` | Show health, paths, and sync history |
+| `vault config` | View/modify configuration |
+| `vault doctor` | Run diagnostics and health checks |
+| `vault connector` | Manage agent connectors |
+| `vault export` / `vault import` | Export/import vault state |
+| `vault ui` | Launch interactive TUI dashboard |
+| `vault completions <shell>` | Generate shell autocompletions |
 
-### `vault install`
-Install a new capability (MCP, Skill, or Workflow) into the vault.
-```bash
-# Install an MCP from NPM
-vault install npm:@anthropic/mcp-filesystem --args '/home/user/projects'
+---
 
-# Install an MCP from PyPI
-vault install pypi:mcp-server-memory
+## 📂 Directory Layout
 
-# Install a local directory as a Skill
-vault install local:/path/to/my-skill --skill
-
-# Install a Workflow
-vault install local:/path/to/workflow.toml --workflow
-```
-
-### `vault remove`
-Remove an installed capability. Automatically detects if the capability is an MCP, Skill, or Workflow.
-```bash
-vault remove my-mcp [--keep-files] [--force]
-```
-
-### `vault update`
-Update installed capabilities to their latest versions concurrently.
-```bash
-vault update my-mcp
-vault update --all
-```
-
-### `vault list`
-List registered capabilities.
-```bash
-vault list [--mcps] [--skills] [--workflows] [--json] [--detail]
-```
-
-### `vault search`
-Fuzzy search capabilities locally or look up packages in the remote NPM registry.
-```bash
-vault search memory
-```
-
-### `vault sync`
-Synchronize installed capabilities to the configuration file of one or all agent connectors.
-```bash
-vault sync claude
-vault sync --all [--force] [--prune]
-```
-
-### `vault status`
-Show overall health status, active paths, capability counts, and recent sync history.
-```bash
-vault status [--json]
-```
-
-### `vault config`
-View or modify configuration parameters.
-```bash
-vault config
-vault config default_agent claude
-```
-
-### `vault doctor`
-Diagnose vault health, database integrity, missing binaries, and prerequisites.
-```bash
-vault doctor [--fix]
-```
-
-### `vault connector`
-Manage active agent connectors.
-```bash
-vault connector add claude
-vault connector list
-```
-
-### `vault export` / `vault import`
-Export or import vault manifest state in TOML or JSON format.
-```bash
-vault export --output manifest.toml
-vault import manifest.toml [--replace]
-```
-
-### `vault completions`
-Generate shell autocompletions.
-```bash
-source <(vault completions zsh)
+```text
+~/.agentvault/
+├── config.toml         # Central configuration
+├── vault.db            # SQLite registry (WAL mode)
+├── mcps/               # MCP server installations
+├── skills/             # Registered skills and prompts
+├── workflows/          # Workflow definitions
+├── backups/            # Pre-sync configuration backups
+└── logs/               # Operation and sync logs
 ```
 
 ---
 
-## 🧪 Running Tests
+## 🏗️ Architecture
 
-To run the unit and integration test suite:
-```bash
-cargo test
-```
+AgentVault is built as a Rust workspace with three crates:
 
-To check compiler guidelines and Clippy warnings:
+| Crate | Purpose |
+|-------|---------|
+| `vault-cli` | CLI binary, TUI dashboard, MCP server/gateway |
+| `vault-core` | Registry, managers, gateway engine, config, search |
+| `vault-connectors` | Agent connector implementations, sync engine |
+
+---
+
+## 🧪 Development
+
 ```bash
+# Run tests
+cargo test --workspace
+
+# Check lints
 cargo clippy --workspace --all-targets -- -D warnings
+
+# Format
+cargo fmt --all
 ```
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the `LICENSE` file for details.
+This project is licensed under the [MIT License](LICENSE).
