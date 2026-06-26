@@ -67,10 +67,21 @@ impl McpManager for DefaultMcpManager {
             }
             clean_target_dir(&target_link)?;
 
-            #[cfg(unix)]
-            std::os::unix::fs::symlink(path, &target_link)?;
-            #[cfg(windows)]
-            std::os::windows::fs::symlink_dir(path, &target_link)?;
+            let is_file = path.is_file();
+            if is_file {
+                std::fs::copy(path, &target_link)?;
+            } else {
+                #[cfg(unix)]
+                std::os::unix::fs::symlink(path, &target_link)?;
+                #[cfg(windows)]
+                std::os::windows::fs::symlink_dir(path, &target_link)?;
+            }
+
+            let command = if is_file {
+                target_link.display().to_string()
+            } else {
+                "node".to_string()
+            };
 
             let entry = McpEntry {
                 id: uuid::Uuid::new_v4().to_string(),
@@ -79,7 +90,7 @@ impl McpManager for DefaultMcpManager {
                 version: "1.0.0".to_string(), // Local defaults to 1.0.0 or parses package file if available
                 source: source.clone(),
                 install_path: target_link,
-                command: "node".to_string(), // Local entry could define custom script runner, placeholder for now
+                command,
                 args: args.clone(),
                 env_vars: env_vars.clone(),
                 transport: crate::mcp::models::McpTransport::Stdio,

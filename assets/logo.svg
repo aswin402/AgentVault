@@ -128,7 +128,7 @@
   <g>
     <rect x="472" y="72" width="80" height="24" rx="12" fill="#161b22" stroke="#30363d" stroke-width="1"/>
     <text x="512" y="89" font-family="'SF Mono', 'Fira Code', monospace" font-size="12"
-          fill="#58a6ff" text-anchor="middle" font-weight="600">v0.2.4</text>
+          fill="#58a6ff" text-anchor="middle" font-weight="600">v0.2.5</text>
   </g>
 
   <!-- Bottom accent line -->

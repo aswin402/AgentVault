@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-06-26
+
+### Added
+
+- **Local File Installation Support**:
+  - Refactored the local capability installer in `vault-core` to copy single executable/binary files directly to the vault capability directory (`~/.agentvault/mcps/<name>`) instead of symlinking. This prevents broken symbolic links if transient target/build directories are cleaned (e.g. via `cargo clean`).
+  - Automatically configured the command attribute to use the path of the copied binary file instead of defaulting to `"node"`.
+- **Animated SVG Logo** version label updated to v0.2.5.
+
 ## [0.2.4] - 2026-06-25
 
 ### Added
